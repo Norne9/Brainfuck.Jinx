@@ -1,0 +1,31 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 11.0.x
+          dotnet-quality: preview
+
+      - name: Restore dependencies
+        run: dotnet restore Brainfuck.Jinx.slnx
+
+      - name: Build
+        run: dotnet build Brainfuck.Jinx.slnx --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test --solution Brainfuck.Jinx.slnx --configuration Release --no-build
