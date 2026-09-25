@@ -7,6 +7,7 @@ public interface IMachine
     void Write();
     void Read();
     void SetZero();
+    void Mul(int value, int buffer);
     void MulAndClear(int value, int buffer);
     bool IsZero();
 }

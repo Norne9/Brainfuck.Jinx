@@ -31,6 +31,10 @@ public class InterpreterExecutor : IExecutor
                 case OpCodeType.SetZero:
                     machine.SetZero();
                     break;
+                case OpCodeType.Mul:
+                    machine.Mul(opcode.Value, opcode.Buffer);
+                    Shift(machine, opcode.Offset);
+                    break;
                 case OpCodeType.MulAndClear:
                     machine.MulAndClear(opcode.Value, opcode.Buffer);
                     Shift(machine, opcode.Offset);

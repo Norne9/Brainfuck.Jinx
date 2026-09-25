@@ -42,6 +42,9 @@ internal sealed class RecordingMachine(byte initialValue = 0) : IMachine
         _value = 0;
     }
 
+    public void Mul(int value, int buffer) =>
+        Operations.Add($"Mul({value}, {buffer})");
+
     public void MulAndClear(int value, int buffer) =>
         Operations.Add($"MulAndClear({value}, {buffer})");
 

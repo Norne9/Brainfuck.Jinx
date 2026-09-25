@@ -8,6 +8,7 @@ public enum OpCodeType
     Read,
     Loop,
     SetZero,
+    Mul,
     MulAndClear
 }
 
@@ -27,6 +28,7 @@ public readonly record struct OpCode(
             OpCodeType.Read => "Read",
             OpCodeType.Loop => "Loop[" + string.Join(", ", OpCodes ?? []) + "]",
             OpCodeType.SetZero => "SetZero",
+            OpCodeType.Mul => $"Mul(val={Value} buf={Buffer} off={Offset})",
             OpCodeType.MulAndClear => $"MulAndClear(val={Value} buf={Buffer} off={Offset})",
             _ => throw new ArgumentOutOfRangeException()
         };

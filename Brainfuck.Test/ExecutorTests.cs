@@ -24,6 +24,17 @@ public class ExecutorTests
     }
 
     [Fact]
+    public void Execute_DispatchesMulWithBuffer()
+    {
+        var machine = new RecordingMachine();
+        OpCode[] opCodes = [new(OpCodeType.Mul, 2, null, 0, 3)];
+
+        _executor.Execute(machine, opCodes);
+
+        Assert.Equal(["Mul(2, 3)"], machine.Operations);
+    }
+
+    [Fact]
     public void Execute_DispatchesMulAndClearWithBuffer()
     {
         var machine = new RecordingMachine();

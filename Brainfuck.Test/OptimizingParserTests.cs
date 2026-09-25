@@ -25,6 +25,19 @@ public class OptimizingParserTests
     }
 
     [Fact]
+    public void Parse_FlattensMultipleDestinations()
+    {
+        var tokens = new TextLexer().ParseTokens("+[->+>++<<]".AsSpan());
+        var opCodes = new OptimizingParser().Parse(tokens);
+
+        Assert.Collection(
+            opCodes,
+            code => Assert.Equal(new OpCode(OpCodeType.Add, 1), code),
+            code => Assert.Equal(new OpCode(OpCodeType.Mul, 1, null, 0, 1), code),
+            code => Assert.Equal(new OpCode(OpCodeType.MulAndClear, 2, null, 0, 2), code));
+    }
+
+    [Fact]
     public void Parse_StillFlattensZeroLoop()
     {
         AssertFlattened("[-]", new OpCode(OpCodeType.SetZero));
