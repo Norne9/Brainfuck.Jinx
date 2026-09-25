@@ -30,5 +30,35 @@ public class FixedMachine(IMachineIo io) : IMachine
         _memory[_position] = io.Read();
     }
 
+    public void SetZero()
+    {
+        _memory[_position] = 0;
+    }
+
+    public void Mul(int value, int buffer)
+    {
+        var destination = Wrap(_position + buffer);
+        _memory[destination] = (byte)(_memory[destination] + value * _memory[_position]);
+    }
+
+    public void MulAndClear(int value, int buffer)
+    {
+        var destination = Wrap(_position + buffer);
+        _memory[destination] = (byte)(_memory[destination] + value * _memory[_position]);
+        _memory[_position] = 0;
+    }
+
+    public void MulAndMul(int value, int buffer)
+    {
+        var destination = Wrap(_position + buffer);
+        _memory[destination] = (byte)(_memory[destination] * value * _memory[_position]);
+    }
+
     public bool IsZero() => _memory[_position] == 0;
+
+    private static int Wrap(int position)
+    {
+        var offset = position % MemorySize; // in (-30000, 30000)
+        return (offset + MemorySize) % MemorySize;
+    }
 }
