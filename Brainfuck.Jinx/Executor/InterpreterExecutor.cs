@@ -28,6 +28,9 @@ public class InterpreterExecutor : IExecutor
                         Execute(machine, opcode.OpCodes!);
                     }
                     break;
+                case OpCodeType.SetZero:
+                    machine.SetZero();
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(opcodes), opcode.Type,
                         $"Unknown OpCode: {opcode.Type}");

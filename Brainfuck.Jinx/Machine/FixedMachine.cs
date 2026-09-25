@@ -30,5 +30,10 @@ public class FixedMachine(IMachineIo io) : IMachine
         _memory[_position] = io.Read();
     }
 
+    public void SetZero()
+    {
+        _memory[_position] = 0;
+    }
+
     public bool IsZero() => _memory[_position] == 0;
 }

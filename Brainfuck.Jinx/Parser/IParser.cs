@@ -5,5 +5,5 @@ namespace Brainfuck.Jinx.Parser;
 
 public interface IParser
 {
-    IReadOnlyList<OpCode> Parse(IReadOnlyList<Token> tokens);
+    List<OpCode> Parse(IReadOnlyList<Token> tokens);
 }

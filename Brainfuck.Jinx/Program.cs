@@ -159,7 +159,7 @@ class Program
     {
         var lexer = new TextLexer();
         var tokens = lexer.ParseTokens(TestProgram.AsSpan());
-        var parser = new SimpleParser();
+        var parser = new OptimizingParser();
         var codes = parser.Parse(tokens);
         using var io = new SimpleIo();
         var machine = new FixedMachine(io);

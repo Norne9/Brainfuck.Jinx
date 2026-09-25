@@ -6,5 +6,6 @@ public interface IMachine
     void Shift(int value);
     void Write();
     void Read();
+    void SetZero();
     bool IsZero();
 }

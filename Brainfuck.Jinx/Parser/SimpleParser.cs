@@ -5,7 +5,7 @@ namespace Brainfuck.Jinx.Parser;
 
 public class SimpleParser: IParser
 {
-    public IReadOnlyList<OpCode> Parse(IReadOnlyList<Token> tokens)
+    public virtual List<OpCode> Parse(IReadOnlyList<Token> tokens)
     {
         var offset = 0;
         var result = Parse(tokens, ref offset);
