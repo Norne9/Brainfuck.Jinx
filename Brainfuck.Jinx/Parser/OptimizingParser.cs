@@ -8,7 +8,8 @@ public class OptimizingParser: SimpleParser
 {
     private readonly IPattern[] _patterns =
     [
-        new ZeroLoopPattern()
+        new ZeroLoopPattern(),
+        new MulAndClearPattern()
     ];
     
     public override List<OpCode> Parse(IReadOnlyList<Token> tokens)

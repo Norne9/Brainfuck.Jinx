@@ -24,6 +24,17 @@ public class ExecutorTests
     }
 
     [Fact]
+    public void Execute_DispatchesMulAndClearWithBuffer()
+    {
+        var machine = new RecordingMachine();
+        OpCode[] opCodes = [new(OpCodeType.MulAndClear, 2, null, 0, 3)];
+
+        _executor.Execute(machine, opCodes);
+
+        Assert.Equal(["MulAndClear(2, 3)"], machine.Operations);
+    }
+
+    [Fact]
     public void Execute_SkipsLoopWhenCurrentCellIsZero()
     {
         var machine = new RecordingMachine();

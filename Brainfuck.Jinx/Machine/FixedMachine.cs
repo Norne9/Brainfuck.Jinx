@@ -35,5 +35,18 @@ public class FixedMachine(IMachineIo io) : IMachine
         _memory[_position] = 0;
     }
 
+    public void MulAndClear(int value, int buffer)
+    {
+        var destination = Wrap(_position + buffer);
+        _memory[destination] = (byte)(_memory[destination] + value * _memory[_position]);
+        _memory[_position] = 0;
+    }
+
     public bool IsZero() => _memory[_position] == 0;
+
+    private static int Wrap(int position)
+    {
+        var offset = position % MemorySize; // in (-30000, 30000)
+        return (offset + MemorySize) % MemorySize;
+    }
 }

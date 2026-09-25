@@ -31,10 +31,22 @@ public class InterpreterExecutor : IExecutor
                 case OpCodeType.SetZero:
                     machine.SetZero();
                     break;
+                case OpCodeType.MulAndClear:
+                    machine.MulAndClear(opcode.Value, opcode.Buffer);
+                    Shift(machine, opcode.Offset);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(opcodes), opcode.Type,
                         $"Unknown OpCode: {opcode.Type}");
             }
+        }
+    }
+
+    private static void Shift(IMachine machine, int offset)
+    {
+        if (offset != 0)
+        {
+            machine.Shift(offset);
         }
     }
 }

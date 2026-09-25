@@ -65,6 +65,25 @@ public class MachineTests
     }
 
     [Fact]
+    public void MulAndClear_AddsProductToBufferAndClearsSource()
+    {
+        using var io = new BufferedIo();
+        var machine = new FixedMachine(io);
+        machine.Add(3);
+        machine.Shift(1);
+        machine.Add(4);
+        machine.Shift(-1);
+
+        machine.MulAndClear(2, 1);
+        machine.Shift(1);
+        machine.Write();
+        machine.Shift(-1);
+        machine.Write();
+
+        Assert.Equal([(byte)10, (byte)0], io.Output);
+    }
+
+    [Fact]
     public void IsZero_ReflectsCurrentCellValue()
     {
         using var io = new BufferedIo();

@@ -36,5 +36,14 @@ internal sealed class RecordingMachine(byte initialValue = 0) : IMachine
 
     public void Read() => Operations.Add("Read");
 
+    public void SetZero()
+    {
+        Operations.Add("SetZero");
+        _value = 0;
+    }
+
+    public void MulAndClear(int value, int buffer) =>
+        Operations.Add($"MulAndClear({value}, {buffer})");
+
     public bool IsZero() => _value == 0;
 }

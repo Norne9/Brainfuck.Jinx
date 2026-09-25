@@ -7,10 +7,16 @@ public enum OpCodeType
     Write,
     Read,
     Loop,
-    SetZero
+    SetZero,
+    MulAndClear
 }
 
-public readonly record struct OpCode(OpCodeType Type, int Value = 0, List<OpCode>? OpCodes = null)
+public readonly record struct OpCode(
+    OpCodeType Type,
+    int Value = 0,
+    List<OpCode>? OpCodes = null,
+    int Offset = 0,
+    int Buffer = 0)
 {
     public override string ToString() =>
         this.Type switch
@@ -21,6 +27,7 @@ public readonly record struct OpCode(OpCodeType Type, int Value = 0, List<OpCode
             OpCodeType.Read => "Read",
             OpCodeType.Loop => "Loop[" + string.Join(", ", OpCodes ?? []) + "]",
             OpCodeType.SetZero => "SetZero",
+            OpCodeType.MulAndClear => $"MulAndClear(val={Value} buf={Buffer} off={Offset})",
             _ => throw new ArgumentOutOfRangeException()
         };
 }
