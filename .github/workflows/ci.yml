@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
-          dotnet-quality: latest
+          dotnet-quality: ga
 
       - name: Restore dependencies
         run: dotnet restore Brainfuck.Jinx.slnx
