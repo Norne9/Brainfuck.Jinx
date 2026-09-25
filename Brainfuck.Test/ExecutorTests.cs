@@ -12,10 +12,10 @@ public class ExecutorTests
         var machine = new RecordingMachine();
         OpCode[] opCodes =
         [
-            new OpCode.Add(3),
-            new OpCode.Shift(-2),
-            new OpCode.Read(),
-            new OpCode.Write()
+            new (OpCodeType.Add,3),
+            new (OpCodeType.Shift,-2),
+            new (OpCodeType.Read),
+            new (OpCodeType.Write)
         ];
 
         _executor.Execute(machine, opCodes);
@@ -27,7 +27,7 @@ public class ExecutorTests
     public void Execute_SkipsLoopWhenCurrentCellIsZero()
     {
         var machine = new RecordingMachine();
-        OpCode[] opCodes = [new OpCode.Loop([new OpCode.Write()])];
+        OpCode[] opCodes = [new (OpCodeType.Loop,0,[new OpCode(OpCodeType.Write)])];
 
         _executor.Execute(machine, opCodes);
 
@@ -38,7 +38,10 @@ public class ExecutorTests
     public void Execute_RepeatsLoopUntilCurrentCellIsZero()
     {
         var machine = new RecordingMachine(3);
-        OpCode[] opCodes = [new OpCode.Loop([new OpCode.Write(), new OpCode.Add(-1)])];
+        OpCode[] opCodes = [new (OpCodeType.Loop,0,[
+            new OpCode(OpCodeType.Write),
+            new OpCode(OpCodeType.Add, -1)
+        ])];
 
         _executor.Execute(machine, opCodes);
 

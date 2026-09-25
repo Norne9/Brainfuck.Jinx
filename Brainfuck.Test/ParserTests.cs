@@ -25,8 +25,8 @@ public class ParserTests
             opCodes,
             code => AssertAdd(code, 1),
             code => AssertShift(code, 1),
-            code => Assert.True(code is OpCode.Write),
-            code => Assert.True(code is OpCode.Read),
+            code => Assert.True(code.Type is OpCodeType.Write),
+            code => Assert.True(code.Type is OpCodeType.Read),
             code => AssertShift(code, -1),
             code => AssertAdd(code, -1));
     }
@@ -69,15 +69,14 @@ public class ParserTests
             code => AssertAdd(code, 1),
             code =>
             {
-                var outer = GetLoop(code);
+                var outer = code;
                 Assert.Collection(
-                    outer.opCodes,
+                    outer.OpCodes!,
                     nested => AssertShift(nested, 1),
                     nested =>
                     {
-                        var inner = GetLoop(nested);
                         Assert.Collection(
-                            inner.opCodes,
+                            nested.OpCodes!,
                             add => AssertAdd(add, -1));
                     });
             });
@@ -91,32 +90,18 @@ public class ParserTests
         Assert.Collection(
             opCodes,
             code => AssertAdd(code, 1),
-            code => Assert.True(code is OpCode.Write));
+            code => Assert.True(code.Type is OpCodeType.Write));
     }
 
     private static void AssertAdd(OpCode code, int expected)
     {
-        var add = code switch
-        {
-            OpCode.Add value => value,
-            _ => throw new InvalidOperationException($"Expected Add but found {code}")
-        };
-        Assert.Equal(expected, add.value);
+        Assert.Equal(OpCodeType.Add, code.Type);
+        Assert.Equal(expected, code.Value);
     }
 
     private static void AssertShift(OpCode code, int expected)
     {
-        var shift = code switch
-        {
-            OpCode.Shift value => value,
-            _ => throw new InvalidOperationException($"Expected Shift but found {code}")
-        };
-        Assert.Equal(expected, shift.value);
+        Assert.Equal(OpCodeType.Shift, code.Type);
+        Assert.Equal(expected, code.Value);
     }
-
-    private static OpCode.Loop GetLoop(OpCode code) => code switch
-    {
-        OpCode.Loop loop => loop,
-        _ => throw new InvalidOperationException($"Expected Loop but found {code}")
-    };
 }

@@ -38,8 +38,8 @@ public class SpeedRegressionTests
         var executor = new InterpreterExecutor();
         OpCode[] program =
         [
-            new OpCode.Add(100),
-            new OpCode.Loop([new OpCode.Add(-1)])
+            new(OpCodeType.Add, 100),
+            new OpCode(OpCodeType.Loop, 0, [new OpCode(OpCodeType.Add, -1)])
         ];
 
         executor.Execute(machine, program);
@@ -48,6 +48,7 @@ public class SpeedRegressionTests
         {
             executor.Execute(machine, program);
         }
+
         stopwatch.Stop();
 
         Assert.True(machine.IsZero());
