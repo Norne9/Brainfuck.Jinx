@@ -2,15 +2,30 @@
 
 namespace Brainfuck.Jinx.Parser.Patterns;
 
-public class ZeroLoopPattern: IPattern
+/// <summary>
+/// Folds a loop that merely clears its counter cell (<c>[-]</c>) into a single
+/// <see cref="OpCodeType.SetZero"/>.
+/// </summary>
+/// <remarks>
+/// This is the degenerate case of an arithmetic loop: the body changes the
+/// counter by <c>-1</c> and leaves every other cell untouched.
+/// </remarks>
+public sealed class ZeroLoopPattern : IPattern
 {
-    public (int count, List<OpCode>? newCodes) Apply(List<OpCode> opcodes, int offset)
+    /// <inheritdoc />
+    public bool TryMatch(OpCode loop, in LoopAnalysis analysis, out OpCode[] replacement)
     {
-        var code = opcodes[offset];
-        if (code is { Type: OpCodeType.Loop, OpCodes: [{ Type: OpCodeType.Add, Value: -1 }] })
+        replacement = [];
+
+        if (loop.OpCodes is null ||
+            !analysis.IsArithmetic ||
+            analysis.CounterDelta != -1 ||
+            analysis.Destinations.Count != 0)
         {
-            return (1, [new OpCode(OpCodeType.SetZero)]);
+            return false;
         }
-        return (0, null);
+
+        replacement = [new OpCode(OpCodeType.SetZero)];
+        return true;
     }
 }

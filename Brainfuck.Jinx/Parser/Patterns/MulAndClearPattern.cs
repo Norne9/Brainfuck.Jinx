@@ -2,28 +2,28 @@ using Brainfuck.Jinx.Executor;
 
 namespace Brainfuck.Jinx.Parser.Patterns;
 
-// [->+<] => MulAndClear(val=1 buf=1 off=0)
-public class MulAndClearPattern : IPattern
+/// <summary>
+/// Folds a loop that moves (and clears) its counter into one destination cell,
+/// e.g. <c>[->+&lt;]</c> or <c>[->-&lt;]</c>, into a single
+/// <see cref="OpCodeType.MulAndClear"/>.
+/// </summary>
+public sealed class MulAndClearPattern : IPattern
 {
-    public (int count, List<OpCode>? newCodes) Apply(List<OpCode> opcodes, int offset)
+    /// <inheritdoc />
+    public bool TryMatch(OpCode loop, in LoopAnalysis analysis, out OpCode[] replacement)
     {
-        var code = opcodes[offset];
-        if (code.Type != OpCodeType.Loop || code.OpCodes is null)
+        replacement = [];
+
+        if (loop.OpCodes is null ||
+            !analysis.IsArithmetic ||
+            analysis.CounterDelta != -1 ||
+            analysis.Destinations.Count != 1)
         {
-            return (0, null);
+            return false;
         }
 
-        if (!SimpleLoop.TryAnalyze(code.OpCodes, out var counterDelta, out var destinations))
-        {
-            return (0, null);
-        }
-
-        if (counterDelta != -1 || destinations.Count != 1)
-        {
-            return (0, null);
-        }
-
-        var (buffer, value) = destinations[0];
-        return (1, [new OpCode(OpCodeType.MulAndClear, value, null, 0, buffer)]);
+        var (buffer, value) = analysis.Destinations[0];
+        replacement = [new OpCode(OpCodeType.MulAndClear, value, null, 0, buffer)];
+        return true;
     }
 }

@@ -57,6 +57,30 @@ public class OptimizingParserTests
         AssertFlattened("[-]", new OpCode(OpCodeType.SetZero));
     }
 
+    [Fact]
+    public void Parse_FlattensZeroLoopWithNetZeroPointerMoves()
+    {
+        // [><-] moves right then back before clearing the counter, so it has the
+        // same net effect as [-].
+        AssertFlattened("[><-]", new OpCode(OpCodeType.SetZero));
+    }
+
+    [Fact]
+    public void Parse_KeepsUnrecognisedLoop()
+    {
+        var tokens = new TextLexer().ParseTokens("+[--]".AsSpan());
+        var opCodes = new OptimizingParser().Parse(tokens);
+
+        Assert.Collection(
+            opCodes,
+            code => Assert.Equal(new OpCode(OpCodeType.Add, 1), code),
+            code =>
+            {
+                Assert.Equal(OpCodeType.Loop, code.Type);
+                Assert.Equal(new OpCode(OpCodeType.Add, -2), code.OpCodes![0]);
+            });
+    }
+
     // The simple parser drops a leading loop, so every sample is prefixed
     // with a no-op Add that the assertions skip.
     private static void AssertFlattened(string loop, OpCode expected)
