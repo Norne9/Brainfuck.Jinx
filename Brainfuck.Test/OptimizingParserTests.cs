@@ -38,6 +38,20 @@ public class OptimizingParserTests
     }
 
     [Fact]
+    public void Parse_FlattensNestedLoop()
+    {
+        var tokens = new TextLexer().ParseTokens("+[->[->+<]<]".AsSpan());
+        var opCodes = new OptimizingParser().Parse(tokens);
+
+        Assert.Collection(
+            opCodes,
+            code => Assert.Equal(new OpCode(OpCodeType.Add, 1), code),
+            code => Assert.Equal(new OpCode(OpCodeType.MulAndMul, 1, null, 1, 1), code),
+            code => Assert.Equal(new OpCode(OpCodeType.MulAndClear, 1, null, -1, 1), code),
+            code => Assert.Equal(new OpCode(OpCodeType.SetZero), code));
+    }
+
+    [Fact]
     public void Parse_StillFlattensZeroLoop()
     {
         AssertFlattened("[-]", new OpCode(OpCodeType.SetZero));

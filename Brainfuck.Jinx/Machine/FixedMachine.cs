@@ -48,6 +48,12 @@ public class FixedMachine(IMachineIo io) : IMachine
         _memory[_position] = 0;
     }
 
+    public void MulAndMul(int value, int buffer)
+    {
+        var destination = Wrap(_position + buffer);
+        _memory[destination] = (byte)(_memory[destination] * value * _memory[_position]);
+    }
+
     public bool IsZero() => _memory[_position] == 0;
 
     private static int Wrap(int position)

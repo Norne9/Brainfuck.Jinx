@@ -10,7 +10,8 @@ public class OptimizingParser: SimpleParser
     [
         new ZeroLoopPattern(),
         new MulAndClearPattern(),
-        new MulPattern()
+        new MulPattern(),
+        new MulAndMulPattern()
     ];
     
     public override List<OpCode> Parse(IReadOnlyList<Token> tokens)

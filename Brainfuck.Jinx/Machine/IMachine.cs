@@ -9,5 +9,6 @@ public interface IMachine
     void SetZero();
     void Mul(int value, int buffer);
     void MulAndClear(int value, int buffer);
+    void MulAndMul(int value, int buffer);
     bool IsZero();
 }
