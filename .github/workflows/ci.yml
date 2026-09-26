@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  checks: write
 
 jobs:
   build-and-test:
@@ -28,4 +29,39 @@ jobs:
         run: dotnet build Brainfuck.Jinx.slnx --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test --solution Brainfuck.Jinx.slnx --configuration Release --no-build
+        run: >
+          dotnet test --solution Brainfuck.Jinx.slnx --configuration Release --no-build
+          --report-xunit-trx --report-xunit-trx-filename results.trx
+          --report-xunit-junit --report-xunit-junit-filename results.xml
+          --report-xunit-markdown --report-xunit-markdown-filename summary.md
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: TestResults/
+          if-no-files-found: warn
+
+      # Creates a "Test results" check with per-test pass/fail details and a
+      # summary on the run page. Needs checks: write, which is unavailable for
+      # pull requests from forks, hence continue-on-error.
+      - name: Publish test report
+        id: report
+        if: always()
+        continue-on-error: true
+        uses: dorny/test-reporter@v3
+        with:
+          name: Test results
+          path: TestResults/results.trx
+          reporter: dotnet-trx
+          report-title: Test results
+          fail-on-error: false
+
+      # Fallback when the report step could not run (e.g. fork pull requests).
+      - name: Add test summary
+        if: always() && steps.report.outcome != 'success'
+        run: |
+          if [ -f TestResults/summary.md ]; then
+            cat TestResults/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
