@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Reflection.Emit;
 
+using Brainfuck.Jinx.IO;
 using Brainfuck.Jinx.Machine;
 
 namespace Brainfuck.Jinx.Executor;
@@ -13,7 +14,7 @@ public class JitExecutor: IExecutor
     private static readonly MethodInfo ShiftMethod = typeof(IMachine).GetMethod(nameof(IMachine.Shift))!;
     private static readonly MethodInfo WriteMethod = typeof(IMachine).GetMethod(nameof(IMachine.Write))!;
     private static readonly MethodInfo ReadMethod = typeof(IMachine).GetMethod(nameof(IMachine.Read))!;
-    private static readonly MethodInfo SetZeroMethod = typeof(IMachine).GetMethod(nameof(IMachine.SetZero))!;
+    private static readonly MethodInfo SetMethod = typeof(IMachine).GetMethod(nameof(IMachine.Set))!;
     private static readonly MethodInfo MulMethod = typeof(IMachine).GetMethod(nameof(IMachine.Mul))!;
     private static readonly MethodInfo MulAndClearMethod = typeof(IMachine).GetMethod(nameof(IMachine.MulAndClear))!;
     private static readonly MethodInfo MulAndMulMethod = typeof(IMachine).GetMethod(nameof(IMachine.MulAndMul))!;
@@ -34,6 +35,12 @@ public class JitExecutor: IExecutor
         
         Executor compiledExecute = (Executor)executeMethod.CreateDelegate(typeof(Executor));
         compiledExecute(machine);
+    }
+    
+    public void Execute(IMachineIo io, IReadOnlyList<OpCode> opcodes)
+    {
+        var machine = new FixedMachine(io);
+        Execute(machine, opcodes);
     }
 
     private void MakeCode(ILGenerator il, IReadOnlyList<OpCode> opcodes)
@@ -72,8 +79,8 @@ public class JitExecutor: IExecutor
                     // So, if IsZero is false (0), jump back up to the loop body.
                     il.Emit(OpCodes.Brfalse, loopBodyLabel);
                     break;
-                case OpCodeType.SetZero:
-                    AddNoParamMethod(il, SetZeroMethod);
+                case OpCodeType.Set:
+                    AddOneParamMethod(il, opcode.Value, SetMethod);
                     break;
                 case OpCodeType.Mul:
                     AddMulCall(il, opcode, MulMethod);

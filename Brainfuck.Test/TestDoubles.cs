@@ -36,10 +36,10 @@ internal sealed class RecordingMachine(byte initialValue = 0) : IMachine
 
     public void Read() => Operations.Add("Read");
 
-    public void SetZero()
+    public void Set(int value)
     {
-        Operations.Add("SetZero");
-        _value = 0;
+        Operations.Add($"Set({value})");
+        _value = (byte)value;
     }
 
     public void Mul(int value, int buffer) =>

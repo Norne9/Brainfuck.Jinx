@@ -5,7 +5,8 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 /// <summary>
 /// Folds a loop whose body already contains a flattened inner multiplication,
 /// e.g. <c>[->[->+&lt;]&lt;]</c>, into a <see cref="OpCodeType.MulAndMul"/>
-/// followed by the inner multiplication and a <see cref="OpCodeType.SetZero"/>.
+/// followed by the inner multiplication and a <see cref="OpCodeType.Set"/> of
+/// zero.
 /// </summary>
 /// <remarks>
 /// This idiom cannot be described by <see cref="LoopAnalysis"/> because the body
@@ -17,12 +18,19 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 public sealed class MulAndMulPattern : IPattern
 {
     /// <inheritdoc />
-    public bool TryMatch(OpCode op, in LoopAnalysis analysis, out OpCode[] replacement)
+    public bool TryMatch(
+        IReadOnlyList<OpCode> opCodes,
+        int index,
+        in LoopAnalysis analysis,
+        out int consumed,
+        out OpCode[] replacement)
     {
         // The shared arithmetic analysis intentionally does not apply here; this
         // pattern inspects the raw body below.
+        consumed = 0;
         replacement = [];
 
+        var op = opCodes[index];
         if (op.OpCodes is not { } body)
         {
             return false;
@@ -64,6 +72,7 @@ public sealed class MulAndMulPattern : IPattern
             return false;
         }
 
+        consumed = 1;
         replacement =
         [
             // Increase the target by the counter, then multiply by it.
@@ -73,7 +82,7 @@ public sealed class MulAndMulPattern : IPattern
             inner with { Offset = -flattenedAt },
 
             // The outer counter is consumed.
-            new OpCode(OpCodeType.SetZero)
+            new OpCode(OpCodeType.Set, 0)
         ];
 
         return true;

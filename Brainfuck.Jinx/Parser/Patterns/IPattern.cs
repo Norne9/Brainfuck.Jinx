@@ -8,11 +8,14 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Every implementation answers a single yes/no question: "does this op-code
-/// match my idiom, and if so what replaces it?". The rule only ever consumes
-/// the one op-code it matched, which keeps the contract small and lets the
-/// parser apply a match with a single <c>RemoveAt</c>/<c>InsertRange</c> pair.
-/// Returning an empty <paramref name="replacement"/> deletes the op-code.
+/// Every implementation answers a single yes/no question: "does the op-code run
+/// starting here match my idiom, and if so what replaces it?". A rule may
+/// consume the single op-code it starts on (the common case) or a short run of
+/// adjacent op-codes, which is what lets the Set-focused rules fold an adjacent
+/// <see cref="OpCodeType.Set"/> together with the <see cref="OpCodeType.Add"/>
+/// that follows or precedes it. The parser applies a match with a single
+/// <c>RemoveRange</c>/<c>InsertRange</c> pair. Returning an empty
+/// <paramref name="replacement"/> deletes the consumed run.
 /// </para>
 /// <para>
 /// Patterns are offered <b>every</b> op-code, not only loops. Some rules (for
@@ -33,21 +36,33 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 public interface IPattern
 {
     /// <summary>
-    /// Tries to fold a single op-code into lower-level op-codes.
+    /// Tries to fold the op-code run starting at <paramref name="index"/> into
+    /// lower-level op-codes.
     /// </summary>
-    /// <param name="op">The op-code to inspect.</param>
+    /// <param name="opCodes">The program (or loop body) currently being optimised.</param>
+    /// <param name="index">The index of the first op-code to inspect.</param>
     /// <param name="analysis">
     /// A loop-body summary resolved once by the parser and shared across
-    /// patterns. It is only meaningful when <paramref name="op"/> is a
-    /// <see cref="OpCodeType.Loop"/>; otherwise it is <see langword="default"/>.
+    /// patterns. It describes the op-code at <paramref name="index"/> and is only
+    /// meaningful when that op-code is a <see cref="OpCodeType.Loop"/>; otherwise
+    /// it is <see langword="default"/>.
+    /// </param>
+    /// <param name="consumed">
+    /// On success, the number of op-codes starting at <paramref name="index"/>
+    /// that <paramref name="replacement"/> replaces. Always at least one.
     /// </param>
     /// <param name="replacement">
-    /// On success, the flat op-codes that replace <paramref name="op"/>; on
-    /// failure, an empty array. An empty array on success deletes the op-code.
+    /// On success, the flat op-codes that replace the consumed run; on failure,
+    /// an empty array. An empty array on success deletes the run.
     /// </param>
     /// <returns>
-    /// <see langword="true"/> when the op-code matched and
+    /// <see langword="true"/> when the run matched and
     /// <paramref name="replacement"/> is ready to use.
     /// </returns>
-    bool TryMatch(OpCode op, in LoopAnalysis analysis, out OpCode[] replacement);
+    bool TryMatch(
+        IReadOnlyList<OpCode> opCodes,
+        int index,
+        in LoopAnalysis analysis,
+        out int consumed,
+        out OpCode[] replacement);
 }

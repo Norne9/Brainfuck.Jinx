@@ -18,10 +18,17 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 public sealed class PointerScanPattern : IPattern
 {
     /// <inheritdoc />
-    public bool TryMatch(OpCode op, in LoopAnalysis analysis, out OpCode[] replacement)
+    public bool TryMatch(
+        IReadOnlyList<OpCode> opCodes,
+        int index,
+        in LoopAnalysis analysis,
+        out int consumed,
+        out OpCode[] replacement)
     {
+        consumed = 0;
         replacement = [];
 
+        var op = opCodes[index];
         if (op.Type != OpCodeType.Loop || op.OpCodes is not { Count: 1 } body)
         {
             return false;
@@ -33,6 +40,7 @@ public sealed class PointerScanPattern : IPattern
             return false;
         }
 
+        consumed = 1;
         replacement = [new OpCode(OpCodeType.PointerScan, scan.Value)];
         return true;
     }

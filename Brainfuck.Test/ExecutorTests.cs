@@ -24,6 +24,17 @@ public class ExecutorTests
     }
 
     [Fact]
+    public void Execute_DispatchesSet()
+    {
+        var machine = new RecordingMachine();
+        OpCode[] opCodes = [new(OpCodeType.Set, 7)];
+
+        _executor.Execute(machine, opCodes);
+
+        Assert.Equal(["Set(7)"], machine.Operations);
+    }
+
+    [Fact]
     public void Execute_DispatchesMulWithBuffer()
     {
         var machine = new RecordingMachine();

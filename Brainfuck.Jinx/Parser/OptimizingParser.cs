@@ -26,10 +26,13 @@ namespace Brainfuck.Jinx.Parser;
 /// </para>
 /// <list type="bullet">
 ///   <item><description><see cref="ZeroOpPattern"/>: <c>+0</c>/<c>&gt;0</c> (a cancelled run) &rarr; removed.</description></item>
-///   <item><description><see cref="ZeroLoopPattern"/>: <c>[-]</c> &rarr; <see cref="OpCodeType.SetZero"/>.</description></item>
+///   <item><description><see cref="ZeroLoopPattern"/>: <c>[-]</c> &rarr; <c>Set(0)</c>.</description></item>
+///   <item><description><see cref="SetAddPattern"/>: <c>Set(x)</c> followed by <c>Add(y)</c> &rarr; <c>Set(x + y)</c>, so <c>[-]++</c> becomes <c>Set(2)</c>.</description></item>
+///   <item><description><see cref="SetSetPattern"/>: <c>Set(x)</c> followed by <c>Set(y)</c> &rarr; <c>Set(y)</c>.</description></item>
+///   <item><description><see cref="AddSetPattern"/>: <c>Add(y)</c> followed by <c>Set(x)</c> &rarr; <c>Set(x)</c>, dropping the dead addition.</description></item>
 ///   <item><description><see cref="MulAndClearPattern"/>: <c>[->+&lt;]</c> &rarr; <see cref="OpCodeType.MulAndClear"/>.</description></item>
 ///   <item><description><see cref="MulPattern"/>: <c>[->+&gt;++&lt;&lt;]</c> &rarr; a run of <see cref="OpCodeType.Mul"/> with a final <see cref="OpCodeType.MulAndClear"/>.</description></item>
-///   <item><description><see cref="MulAndMulPattern"/>: <c>[->[->+&lt;]&lt;]</c> &rarr; <see cref="OpCodeType.MulAndMul"/> followed by the inner loop and a <see cref="OpCodeType.SetZero"/>.</description></item>
+///   <item><description><see cref="MulAndMulPattern"/>: <c>[->[->+&lt;]&lt;]</c> &rarr; <see cref="OpCodeType.MulAndMul"/> followed by the inner loop and a <c>Set(0)</c>.</description></item>
 ///   <item><description><see cref="PointerScanPattern"/>: <c>[&gt;]</c> &rarr; <see cref="OpCodeType.PointerScan"/>.</description></item>
 /// </list>
 /// <para>
@@ -64,8 +67,17 @@ public class OptimizingParser : SimpleParser
         // +0 / >0 (cancelled run) => (removed)
         new ZeroOpPattern(),
 
-        // [-] => SetZero
+        // [-] => Set(0)
         new ZeroLoopPattern(),
+
+        // Set(x) + Add(y) => Set(x + y)
+        new SetAddPattern(),
+
+        // Set(x), Set(y) => Set(y)
+        new SetSetPattern(),
+
+        // Add(y), Set(x) => Set(x)
+        new AddSetPattern(),
 
         // [->+<] => MulAndClear
         new MulAndClearPattern(),
@@ -73,7 +85,7 @@ public class OptimizingParser : SimpleParser
         // [->+>++<<] => Mul(...) + MulAndClear(...)
         new MulPattern(),
 
-        // [->[->+<]<] => MulAndMul(...) + MulAndClear(...) + SetZero
+        // [->[->+<]<] => MulAndMul(...) + MulAndClear(...) + Set(0)
         new MulAndMulPattern(),
 
         // [>] => PointerScan
@@ -130,18 +142,20 @@ public class OptimizingParser : SimpleParser
             }
 
             // Try the patterns in order and stop at the first match. Once a
-            // pattern succeeds the slot no longer represents the construct the
-            // remaining patterns look for, so trying them would be pointless.
+            // pattern succeeds the run it matched no longer represents the
+            // construct the remaining patterns look for, so trying them would be
+            // pointless.
             foreach (var pattern in Patterns)
             {
-                if (!pattern.TryMatch(opCodes[i], in analysis, out var replacement))
+                if (!pattern.TryMatch(opCodes, i, in analysis, out var consumed, out var replacement))
                 {
                     continue;
                 }
 
-                // Every pattern replaces exactly the op-code it matched. An
-                // empty replacement deletes it.
-                opCodes.RemoveAt(i);
+                // A pattern replaces the run it matched -- one op-code for most
+                // rules, but the Set-folding rules consume two. An empty
+                // replacement deletes the run.
+                opCodes.RemoveRange(i, consumed);
                 if (replacement.Length > 0)
                 {
                     opCodes.InsertRange(i, replacement);

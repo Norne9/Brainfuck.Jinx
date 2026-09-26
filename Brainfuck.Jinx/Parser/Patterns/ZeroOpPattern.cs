@@ -16,10 +16,23 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 public sealed class ZeroOpPattern : IPattern
 {
     /// <inheritdoc />
-    public bool TryMatch(OpCode op, in LoopAnalysis analysis, out OpCode[] replacement)
+    public bool TryMatch(
+        IReadOnlyList<OpCode> opCodes,
+        int index,
+        in LoopAnalysis analysis,
+        out int consumed,
+        out OpCode[] replacement)
     {
+        consumed = 0;
         replacement = [];
 
-        return op.Type is OpCodeType.Add or OpCodeType.Shift && op.Value == 0;
+        var op = opCodes[index];
+        if (op.Type is not (OpCodeType.Add or OpCodeType.Shift) || op.Value != 0)
+        {
+            return false;
+        }
+
+        consumed = 1;
+        return true;
     }
 }

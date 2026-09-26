@@ -10,10 +10,17 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 public sealed class MulAndClearPattern : IPattern
 {
     /// <inheritdoc />
-    public bool TryMatch(OpCode op, in LoopAnalysis analysis, out OpCode[] replacement)
+    public bool TryMatch(
+        IReadOnlyList<OpCode> opCodes,
+        int index,
+        in LoopAnalysis analysis,
+        out int consumed,
+        out OpCode[] replacement)
     {
+        consumed = 0;
         replacement = [];
 
+        var op = opCodes[index];
         if (op.OpCodes is null ||
             !analysis.IsArithmetic ||
             analysis.CounterDelta != -1 ||
@@ -23,6 +30,7 @@ public sealed class MulAndClearPattern : IPattern
         }
 
         var (buffer, value) = analysis.Destinations[0];
+        consumed = 1;
         replacement = [new OpCode(OpCodeType.MulAndClear, value, null, 0, buffer)];
         return true;
     }

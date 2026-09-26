@@ -30,9 +30,9 @@ public class FixedMachine(IMachineIo io) : IMachine
         _memory[_position] = io.Read();
     }
 
-    public void SetZero()
+    public void Set(int value)
     {
-        _memory[_position] = 0;
+        _memory[_position] = (byte)value;
     }
 
     public void Mul(int value, int buffer)

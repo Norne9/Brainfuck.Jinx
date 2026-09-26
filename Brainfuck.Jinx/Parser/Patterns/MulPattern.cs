@@ -17,10 +17,17 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 public sealed class MulPattern : IPattern
 {
     /// <inheritdoc />
-    public bool TryMatch(OpCode op, in LoopAnalysis analysis, out OpCode[] replacement)
+    public bool TryMatch(
+        IReadOnlyList<OpCode> opCodes,
+        int index,
+        in LoopAnalysis analysis,
+        out int consumed,
+        out OpCode[] replacement)
     {
+        consumed = 0;
         replacement = [];
 
+        var op = opCodes[index];
         if (op.OpCodes is null ||
             !analysis.IsArithmetic ||
             analysis.CounterDelta != -1 ||
@@ -40,6 +47,7 @@ public sealed class MulPattern : IPattern
             codes[i] = new OpCode(type, value, null, 0, buffer);
         }
 
+        consumed = 1;
         replacement = codes;
         return true;
     }
