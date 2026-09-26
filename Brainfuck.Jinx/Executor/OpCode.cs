@@ -10,7 +10,9 @@
 /// (<see cref="Set"/> .. <see cref="PointerScan"/>) contains fused, purpose-built
 /// operations that the <see cref="Brainfuck.Jinx.Parser.OptimizingParser"/>
 /// produces when it recognises a well-known idiom; each one does in a single
-/// dispatch what a whole loop used to do.
+/// dispatch what a whole loop used to do. <see cref="MulAndMul"/> is a general
+/// primitive kept for manually built programs and is not currently emitted by
+/// the parser.
 /// </para>
 /// <para>
 /// All cell values are bytes and therefore wrap modulo 256. All pointer movement
@@ -75,8 +77,8 @@ public enum OpCodeType
     /// Replaces the cell at the relative destination
     /// <see cref="OpCode.Buffer"/> with
     /// <c>memory[destination] * Value * memory[position]</c>, then shifts the
-    /// pointer by <see cref="OpCode.Offset"/>. Used by the nested
-    /// <c>[->[->+&lt;]&lt;]</c> idiom.
+    /// pointer by <see cref="OpCode.Offset"/>. A general multiply primitive; the
+    /// optimising parser does not currently emit it.
     /// </summary>
     MulAndMul,
 

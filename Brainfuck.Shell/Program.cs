@@ -113,12 +113,12 @@ internal static class Program
         {
             tokens = new TextLexer().ParseTokens(program.AsSpan());
         }
-        catch (TextLexer.UnmatchedOpeningBracketException ex)
+        catch (TextLexer.UnmatchedClosingBracketException ex)
         {
             Console.Error.WriteLine(ex.Message);
             return 1;
         }
-        catch (TextLexer.UnmatchedClosingBracketException ex)
+        catch (TextLexer.UnmatchedOpeningBracketException ex)
         {
             Console.Error.WriteLine(ex.Message);
             return 1;

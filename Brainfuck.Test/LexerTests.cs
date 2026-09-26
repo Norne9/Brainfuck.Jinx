@@ -51,7 +51,7 @@ public class LexerTests
     [Fact]
     public void ParseTokens_ReportsUnexpectedClosingBracketPosition()
     {
-        var exception = Assert.Throws<TextLexer.UnmatchedOpeningBracketException>(
+        var exception = Assert.Throws<TextLexer.UnmatchedClosingBracketException>(
             () => _lexer.ParseTokens("ignored\n  ]".AsSpan()));
 
         Assert.Equal("Unmatched ']' at position (2:3)", exception.Message);
@@ -60,7 +60,7 @@ public class LexerTests
     [Fact]
     public void ParseTokens_ReportsNumberOfMissingClosingBrackets()
     {
-        var exception = Assert.Throws<TextLexer.UnmatchedClosingBracketException>(
+        var exception = Assert.Throws<TextLexer.UnmatchedOpeningBracketException>(
             () => _lexer.ParseTokens("[+[".AsSpan()));
 
         Assert.Equal("Found 2 unmatched '['", exception.Message);

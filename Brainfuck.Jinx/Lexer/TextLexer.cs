@@ -21,10 +21,10 @@ public class TextLexer: ILexer
     /// </summary>
     /// <param name="input">The source text to scan.</param>
     /// <returns>The instruction tokens in source order.</returns>
-    /// <exception cref="UnmatchedOpeningBracketException">
+    /// <exception cref="UnmatchedClosingBracketException">
     /// Thrown when a <c>]</c> appears with no matching <c>[</c>.
     /// </exception>
-    /// <exception cref="UnmatchedClosingBracketException">
+    /// <exception cref="UnmatchedOpeningBracketException">
     /// Thrown at end of input when <c>[</c> brackets are still open.
     /// </exception>
     public IReadOnlyList<Token> ParseTokens(ReadOnlySpan<char> input)
@@ -66,7 +66,7 @@ public class TextLexer: ILexer
                     // A negative balance means this `]` closed nothing.
                     if (bracketWatcher < 0)
                     {
-                        throw new UnmatchedOpeningBracketException(lines, characters);
+                        throw new UnmatchedClosingBracketException(lines, characters);
                     }
                     result.Add(Token.RightBracket);
                     break;
@@ -80,7 +80,7 @@ public class TextLexer: ILexer
         // Anything left open at the end of input has no matching `]`.
         if (bracketWatcher > 0)
         {
-            throw new UnmatchedClosingBracketException(bracketWatcher);
+            throw new UnmatchedOpeningBracketException(bracketWatcher);
         }
         return result;
     }
@@ -90,20 +90,12 @@ public class TextLexer: ILexer
     /// </summary>
     /// <param name="line">The 1-based line of the offending <c>]</c>.</param>
     /// <param name="character">The 1-based column of the offending <c>]</c>.</param>
-    /// <remarks>
-    /// The type name says "opening" even though the cause is an extra closing
-    /// bracket; see the bug report accompanying the documentation pass.
-    /// </remarks>
-    public class UnmatchedOpeningBracketException(int line, int character) :
+    public class UnmatchedClosingBracketException(int line, int character) :
         Exception($"Unmatched ']' at position ({line}:{character})");
 
     /// <summary>
     /// Reports one or more <c>[</c> brackets that are never closed.
     /// </summary>
     /// <param name="count">The number of still-open <c>[</c> brackets.</param>
-    /// <remarks>
-    /// The type name says "closing" even though the cause is missing closing
-    /// brackets; see the bug report accompanying the documentation pass.
-    /// </remarks>
-    public class UnmatchedClosingBracketException(int count) : Exception($"Found {count} unmatched '['");
+    public class UnmatchedOpeningBracketException(int count) : Exception($"Found {count} unmatched '['");
 }

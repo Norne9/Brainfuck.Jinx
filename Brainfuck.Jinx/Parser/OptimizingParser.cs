@@ -32,7 +32,6 @@ namespace Brainfuck.Jinx.Parser;
 ///   <item><description><see cref="AddSetPattern"/>: <c>Add(y)</c> followed by <c>Set(x)</c> &#8594; <c>Set(x)</c>, dropping the dead addition.</description></item>
 ///   <item><description><see cref="MulAndClearPattern"/>: <c>[->+&lt;]</c> &#8594; <see cref="OpCodeType.MulAndClear"/>.</description></item>
 ///   <item><description><see cref="MulPattern"/>: <c>[->+&gt;++&lt;&lt;]</c> &#8594; a run of <see cref="OpCodeType.Mul"/> with a final <see cref="OpCodeType.MulAndClear"/>.</description></item>
-///   <item><description><see cref="MulAndMulPattern"/>: <c>[->[->+&lt;]&lt;]</c> &#8594; <see cref="OpCodeType.MulAndMul"/> followed by the inner loop and a <c>Set(0)</c>.</description></item>
 ///   <item><description><see cref="PointerScanPattern"/>: <c>[&gt;]</c> &#8594; <see cref="OpCodeType.PointerScan"/>.</description></item>
 /// </list>
 /// <para>
@@ -44,10 +43,10 @@ namespace Brainfuck.Jinx.Parser;
 /// </para>
 /// <para>
 /// Optimisation proceeds <b>bottom-up</b>: a loop's body is rewritten before
-/// the loop itself is offered to the patterns. This ordering is required by
-/// <see cref="MulAndMulPattern"/>, which only recognises an inner loop once that
-/// loop has already been lowered to a <see cref="OpCodeType.Mul"/> or
-/// <see cref="OpCodeType.MulAndClear"/>.
+/// the loop itself is offered to the patterns, so a flattened inner loop is
+/// visible when the enclosing loop is inspected. If a body is rewritten down to
+/// nothing, the loop is folded into <see cref="OpCodeType.Halt"/> (the same
+/// representation the base parser uses for <c>[]</c>).
 /// </para>
 /// <para>
 /// A replacement is always flat (patterns never introduce a new loop), but a
@@ -84,9 +83,6 @@ public class OptimizingParser : SimpleParser
 
         // [->+>++<<] => Mul(...) + MulAndClear(...)
         new MulPattern(),
-
-        // [->[->+<]<] => MulAndMul(...) + MulAndClear(...) + Set(0)
-        new MulAndMulPattern(),
 
         // [>] => PointerScan
         new PointerScanPattern()
@@ -131,13 +127,28 @@ public class OptimizingParser : SimpleParser
         {
             // Bottom-up: descend into a loop body first. By the time the loop
             // itself is offered to the patterns, any nested idiom it contains
-            // has already been rewritten to the flat form that patterns such as
-            // MulAndMulPattern expect. Non-loop op-codes get a default
-            // analysis.
+            // has already been rewritten to the flat form that the patterns
+            // expect. Non-loop op-codes get a default analysis.
             var analysis = default(LoopAnalysis);
-            if (opCodes[i] is { Type: OpCodeType.Loop, OpCodes: { Count: > 0 } body })
+            if (opCodes[i] is { Type: OpCodeType.Loop, OpCodes: { } body })
             {
-                madeChanges |= Optimize(body);
+                if (body.Count > 0)
+                {
+                    madeChanges |= Optimize(body);
+                }
+
+                // If the body disappeared entirely, every iteration was a
+                // no-op. That is exactly the empty `[]` idiom, which the base
+                // parser lowers to Halt; do the same here so both executors
+                // agree. Leaving an empty Loop would hang the interpreter while
+                // the JIT silently skips it.
+                if (body.Count == 0)
+                {
+                    opCodes[i] = new OpCode(OpCodeType.Halt);
+                    madeChanges = true;
+                    continue;
+                }
+
                 analysis = LoopAnalysis.Analyze(body);
             }
 
