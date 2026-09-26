@@ -9,21 +9,20 @@ namespace Brainfuck.Jinx.IO;
 /// </summary>
 /// <remarks>
 /// Brainfuck programs often emit many single-byte writes; batching them into one
-/// <see cref="Console.Write(ReadOnlySpan{char})"/> per line avoids the per-write
+/// <see cref="Stream.Write(ReadOnlySpan{byte})"/> per line avoids the per-write
 /// console overhead. Flushing before a read keeps prompt-like programs
 /// responsive.
 /// </remarks>
 public sealed class BufferedIo: IMachineIo
 {
-    /// <summary>Pending output, as characters, not yet written to the console.</summary>
-    private readonly List<char> _buffer = [];
+    /// <summary>Pending output, not yet written to the console.</summary>
+    private readonly List<byte> _buffer = [];
 
     /// <inheritdoc />
     public void Write(byte value)
     {
-        var val = (char)value;
-        _buffer.Add(val);
-        if (val == '\n')
+        _buffer.Add(value);
+        if (value == 10) // Newline
         {
             Flush();
         }
@@ -39,11 +38,14 @@ public sealed class BufferedIo: IMachineIo
     }
 
     /// <summary>
-    /// Writes all buffered characters to the console and clears the buffer.
+    /// Writes all buffered bytes to the console and clears the buffer.
     /// </summary>
     private void Flush()
     {
-        Console.Write(CollectionsMarshal.AsSpan(_buffer));
+        using (var stdout = Console.OpenStandardOutput())
+        {
+            stdout.Write(CollectionsMarshal.AsSpan(_buffer));
+        }
         _buffer.Clear();
     }
 
