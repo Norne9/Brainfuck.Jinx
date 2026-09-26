@@ -59,14 +59,6 @@ public interface IMachine
     void MulAndClear(int value, int buffer);
 
     /// <summary>
-    /// Replaces the cell at <c>position + <paramref name="buffer"/></c> with
-    /// <c><paramref name="value"/> * thatCell * currentCell</c>.
-    /// </summary>
-    /// <param name="value">The multiplier.</param>
-    /// <param name="buffer">The destination cell's offset from the current position.</param>
-    void MulAndMul(int value, int buffer);
-
-    /// <summary>
     /// Shifts the pointer by <paramref name="direction"/> repeatedly until the
     /// current cell is zero.
     /// </summary>

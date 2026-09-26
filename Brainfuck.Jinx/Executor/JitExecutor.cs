@@ -53,7 +53,6 @@ public class JitExecutor: IExecutor
     private static readonly MethodInfo SetMethod = typeof(IMachine).GetMethod(nameof(IMachine.Set))!;
     private static readonly MethodInfo MulMethod = typeof(IMachine).GetMethod(nameof(IMachine.Mul))!;
     private static readonly MethodInfo MulAndClearMethod = typeof(IMachine).GetMethod(nameof(IMachine.MulAndClear))!;
-    private static readonly MethodInfo MulAndMulMethod = typeof(IMachine).GetMethod(nameof(IMachine.MulAndMul))!;
     private static readonly MethodInfo PointerScanMethod = typeof(IMachine).GetMethod(nameof(IMachine.PointerScan))!;
     private static readonly MethodInfo IsZeroMethod = typeof(IMachine).GetMethod(nameof(IMachine.IsZero))!;
     private static readonly MethodInfo IoWriteMethod = typeof(IMachineIo).GetMethod(nameof(IMachineIo.Write))!;
@@ -175,9 +174,6 @@ public class JitExecutor: IExecutor
                 case OpCodeType.MulAndClear:
                     AddMulCall(il, opcode, MulAndClearMethod);
                     break;
-                case OpCodeType.MulAndMul:
-                    AddMulCall(il, opcode, MulAndMulMethod);
-                    break;
                 case OpCodeType.PointerScan:
                     AddOneParamMethod(il, opcode.Value, PointerScanMethod);
                     break;
@@ -253,10 +249,6 @@ public class JitExecutor: IExecutor
                 case OpCodeType.MulAndClear:
                     EmitMul(il, memory, position, destination, opcode.Buffer, opcode.Value);
                     EmitSet(il, memory, position, 0);
-                    EmitShift(il, position, opcode.Offset);
-                    break;
-                case OpCodeType.MulAndMul:
-                    EmitMulAndMul(il, memory, position, destination, opcode.Buffer, opcode.Value);
                     EmitShift(il, position, opcode.Offset);
                     break;
                 case OpCodeType.PointerScan:
@@ -417,32 +409,6 @@ public class JitExecutor: IExecutor
         EmitLoadCell(il, memory, position);
         il.Emit(OpCodes.Mul);
         il.Emit(OpCodes.Add);
-        il.Emit(OpCodes.Conv_U1);
-        il.Emit(OpCodes.Stelem_I1);
-    }
-
-    /// <summary>
-    /// Emits <c>memory[destination] = (byte)(memory[destination] * value * memory[position])</c>.
-    /// </summary>
-    private static void EmitMulAndMul(
-        ILGenerator il,
-        LocalBuilder memory,
-        LocalBuilder position,
-        LocalBuilder destination,
-        int buffer,
-        int value)
-    {
-        EmitDestination(il, position, destination, buffer);
-
-        il.Emit(OpCodes.Ldloc, memory);
-        il.Emit(OpCodes.Ldloc, destination);
-        il.Emit(OpCodes.Ldloc, memory);
-        il.Emit(OpCodes.Ldloc, destination);
-        il.Emit(OpCodes.Ldelem_U1);
-        il.Emit(OpCodes.Ldc_I4, value);
-        il.Emit(OpCodes.Mul);
-        EmitLoadCell(il, memory, position);
-        il.Emit(OpCodes.Mul);
         il.Emit(OpCodes.Conv_U1);
         il.Emit(OpCodes.Stelem_I1);
     }

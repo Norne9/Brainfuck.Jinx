@@ -71,13 +71,6 @@ public class FixedMachine(IMachineIo io) : IMachine
     }
 
     /// <inheritdoc />
-    public void MulAndMul(int value, int buffer)
-    {
-        var destination = Wrap(_position + buffer);
-        _memory[destination] = (byte)(_memory[destination] * value * _memory[_position]);
-    }
-
-    /// <inheritdoc />
     public void PointerScan(int direction)
     {
         // Brainfuck's `[>]`/`[<]` idiom: advance until the current cell is zero.

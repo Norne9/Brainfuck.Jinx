@@ -5,14 +5,12 @@
 /// </summary>
 /// <remarks>
 /// <para>
-/// The lower half of the enum (<see cref="Add"/> .. <see cref="Read"/>) maps
+/// The lower half of the enum (<see cref="Add"/> ... <see cref="Read"/>) maps
 /// one-to-one onto Brainfuck's eight instructions. The upper half
-/// (<see cref="Set"/> .. <see cref="PointerScan"/>) contains fused, purpose-built
+/// (<see cref="Set"/> ... <see cref="PointerScan"/>) contains fused, purpose-built
 /// operations that the <see cref="Brainfuck.Jinx.Parser.OptimizingParser"/>
 /// produces when it recognises a well-known idiom; each one does in a single
-/// dispatch what a whole loop used to do. <see cref="MulAndMul"/> is a general
-/// primitive kept for manually built programs and is not currently emitted by
-/// the parser.
+/// dispatch what a whole loop used to do.
 /// </para>
 /// <para>
 /// All cell values are bytes and therefore wrap modulo 256. All pointer movement
@@ -72,15 +70,6 @@ public enum OpCodeType
     /// <c>[->+&lt;]</c>.
     /// </summary>
     MulAndClear,
-
-    /// <summary>
-    /// Replaces the cell at the relative destination
-    /// <see cref="OpCode.Buffer"/> with
-    /// <c>memory[destination] * Value * memory[position]</c>, then shifts the
-    /// pointer by <see cref="OpCode.Offset"/>. A general multiply primitive; the
-    /// optimising parser does not currently emit it.
-    /// </summary>
-    MulAndMul,
 
     /// <summary>
     /// Repeatedly shifts the pointer by the signed constant
@@ -144,7 +133,6 @@ public readonly record struct OpCode(
             OpCodeType.Set => $"Set({Value})",
             OpCodeType.Mul => $"Mul(val={Value} buf={Buffer} off={Offset})",
             OpCodeType.MulAndClear => $"MulAndClear(val={Value} buf={Buffer} off={Offset})",
-            OpCodeType.MulAndMul => $"MulAndMul(val={Value} buf={Buffer} off={Offset})",
             OpCodeType.PointerScan => $"PointerScan({Value})",
             OpCodeType.Halt => "Halt",
             _ => throw new ArgumentOutOfRangeException()
