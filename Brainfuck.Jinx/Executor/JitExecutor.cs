@@ -6,13 +6,46 @@ using Brainfuck.Jinx.Machine;
 
 namespace Brainfuck.Jinx.Executor;
 
+/// <summary>
+/// An executor that compiles a parsed program into a
+/// <see cref="DynamicMethod"/> and runs the generated IL, instead of walking the
+/// op-code tree.
+/// </summary>
+/// <remarks>
+/// <para>
+/// There are two compilation paths, mirroring the two
+/// <see cref="IExecutor"/> overloads:
+/// </para>
+/// <list type="bullet">
+///   <item><description>
+///     <see cref="Execute(IMachine, IReadOnlyList{OpCode})"/> emits one
+///     <see cref="IMachine"/> call per op-code, so the tape stays owned by the
+///     caller and survives between runs.
+///   </description></item>
+///   <item><description>
+///     <see cref="Execute(IMachineIo, IReadOnlyList{OpCode})"/> inlines the tape
+///     as a local <see cref="byte"/>[] and the pointer as a local
+///     <see cref="int"/>, eliminating the per-cell interface dispatch. This is
+///     the fast path used by the command-line shell.
+///   </description></item>
+/// </list>
+/// <para>
+/// Both paths must match <see cref="InterpreterExecutor"/> exactly; the JIT is
+/// only a faster encoding of the same semantics. The generated method is
+/// discarded after each call, so a program is recompiled on every execution.
+/// </para>
+/// </remarks>
 public class JitExecutor: IExecutor
 {
+    /// <summary>The fixed tape length, in bytes, shared by every executor.</summary>
     private const int MemorySize = 30_000;
 
+    /// <summary>Signature of the generated method for the machine-based path.</summary>
     private delegate void Executor(IMachine machine);
+
+    /// <summary>Signature of the generated method for the inlined-tape path.</summary>
     private delegate void InlineExecutor(IMachineIo io);
-    
+
     private static readonly MethodInfo AddMethod = typeof(IMachine).GetMethod(nameof(IMachine.Add))!;
     private static readonly MethodInfo ShiftMethod = typeof(IMachine).GetMethod(nameof(IMachine.Shift))!;
     private static readonly MethodInfo WriteMethod = typeof(IMachine).GetMethod(nameof(IMachine.Write))!;
@@ -26,6 +59,16 @@ public class JitExecutor: IExecutor
     private static readonly MethodInfo IoWriteMethod = typeof(IMachineIo).GetMethod(nameof(IMachineIo.Write))!;
     private static readonly MethodInfo IoReadMethod = typeof(IMachineIo).GetMethod(nameof(IMachineIo.Read))!;
 
+    /// <summary>
+    /// Compiles <paramref name="opcodes"/> to IL that calls
+    /// <paramref name="machine"/>, then immediately invokes it.
+    /// </summary>
+    /// <param name="machine">The machine the generated code drives.</param>
+    /// <param name="opcodes">The parsed program to compile and run.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown while compiling if an op-code has an unknown
+    /// <see cref="OpCodeType"/>.
+    /// </exception>
     public void Execute(IMachine machine, IReadOnlyList<OpCode> opcodes)
     {
         var executeMethod = new DynamicMethod(
@@ -76,6 +119,17 @@ public class JitExecutor: IExecutor
         compiledExecute(io);
     }
 
+    /// <summary>
+    /// Emits the machine-based body of the generated method: each op-code
+    /// becomes a call to the matching <see cref="IMachine"/> method.
+    /// </summary>
+    /// <param name="il">The generator receiving the op-code instructions.</param>
+    /// <param name="opcodes">The program (or loop body) to translate.</param>
+    /// <remarks>
+    /// Loops are emitted as a backwards branch guarded by
+    /// <see cref="IMachine.IsZero"/>, matching the interpreter's
+    /// <c>while (!IsZero())</c>. Loops with an empty body emit nothing.
+    /// </remarks>
     private void MakeCode(ILGenerator il, IReadOnlyList<OpCode> opcodes)
     {
         foreach (OpCode opcode in opcodes)
@@ -425,23 +479,44 @@ public class JitExecutor: IExecutor
         il.Emit(OpCodes.Stelem_I1);
     }
 
+    /// <summary>
+    /// Emits a call to a method that takes a single <see cref="int"/> argument,
+    /// loading the machine from argument 0 first.
+    /// </summary>
+    /// <param name="il">The generator receiving the instructions.</param>
+    /// <param name="value">The integer argument to pass.</param>
+    /// <param name="method">The one-parameter method to call virtually.</param>
     private static void AddOneParamMethod(ILGenerator il, int value, MethodInfo method)
     {
         il.Emit(OpCodes.Ldarg_0); // Load 'machine' (Arg 0)
         il.Emit(OpCodes.Ldc_I4, value); // Load integer
         il.Emit(OpCodes.Callvirt, method); // Call method
     }
+
+    /// <summary>
+    /// Emits a call to a parameterless method, loading the machine from
+    /// argument 0 first.
+    /// </summary>
+    /// <param name="il">The generator receiving the instructions.</param>
+    /// <param name="method">The parameterless method to call virtually.</param>
     private static void AddNoParamMethod(ILGenerator il, MethodInfo method)
     {
         il.Emit(OpCodes.Ldarg_0); // Load 'machine' (Arg 0)
         il.Emit(OpCodes.Callvirt, method); // Call method
     }
 
+    /// <summary>
+    /// Emits the machine-based form of a <c>Mul</c>-family op-code: a call with
+    /// the value and buffer, followed by the optional offset shift.
+    /// </summary>
+    /// <param name="il">The generator receiving the instructions.</param>
+    /// <param name="opcode">The multiply op-code being translated.</param>
+    /// <param name="method">The matching <see cref="IMachine"/> multiply method.</param>
     private static void AddMulCall(ILGenerator il, OpCode opcode, MethodInfo method)
     {
         il.Emit(OpCodes.Ldarg_0); // Load 'machine' (Arg 0)
-        il.Emit(OpCodes.Ldc_I4, opcode.Value); // Load integer 1
-        il.Emit(OpCodes.Ldc_I4, opcode.Buffer); // Load integer 1
+        il.Emit(OpCodes.Ldc_I4, opcode.Value); // Multiplier
+        il.Emit(OpCodes.Ldc_I4, opcode.Buffer); // Destination cell offset
         il.Emit(OpCodes.Callvirt, method); // Call method
         if (opcode.Offset != 0)
         {

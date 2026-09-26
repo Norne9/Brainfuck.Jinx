@@ -25,15 +25,15 @@ namespace Brainfuck.Jinx.Parser;
 /// wins:
 /// </para>
 /// <list type="bullet">
-///   <item><description><see cref="ZeroOpPattern"/>: <c>+0</c>/<c>&gt;0</c> (a cancelled run) &rarr; removed.</description></item>
-///   <item><description><see cref="ZeroLoopPattern"/>: <c>[-]</c> &rarr; <c>Set(0)</c>.</description></item>
-///   <item><description><see cref="SetAddPattern"/>: <c>Set(x)</c> followed by <c>Add(y)</c> &rarr; <c>Set(x + y)</c>, so <c>[-]++</c> becomes <c>Set(2)</c>.</description></item>
-///   <item><description><see cref="SetSetPattern"/>: <c>Set(x)</c> followed by <c>Set(y)</c> &rarr; <c>Set(y)</c>.</description></item>
-///   <item><description><see cref="AddSetPattern"/>: <c>Add(y)</c> followed by <c>Set(x)</c> &rarr; <c>Set(x)</c>, dropping the dead addition.</description></item>
-///   <item><description><see cref="MulAndClearPattern"/>: <c>[->+&lt;]</c> &rarr; <see cref="OpCodeType.MulAndClear"/>.</description></item>
-///   <item><description><see cref="MulPattern"/>: <c>[->+&gt;++&lt;&lt;]</c> &rarr; a run of <see cref="OpCodeType.Mul"/> with a final <see cref="OpCodeType.MulAndClear"/>.</description></item>
-///   <item><description><see cref="MulAndMulPattern"/>: <c>[->[->+&lt;]&lt;]</c> &rarr; <see cref="OpCodeType.MulAndMul"/> followed by the inner loop and a <c>Set(0)</c>.</description></item>
-///   <item><description><see cref="PointerScanPattern"/>: <c>[&gt;]</c> &rarr; <see cref="OpCodeType.PointerScan"/>.</description></item>
+///   <item><description><see cref="ZeroOpPattern"/>: <c>+0</c>/<c>&gt;0</c> (a cancelled run) &#8594; removed.</description></item>
+///   <item><description><see cref="ZeroLoopPattern"/>: <c>[-]</c> &#8594; <c>Set(0)</c>.</description></item>
+///   <item><description><see cref="SetAddPattern"/>: <c>Set(x)</c> followed by <c>Add(y)</c> &#8594; <c>Set(x + y)</c>, so <c>[-]++</c> becomes <c>Set(2)</c>.</description></item>
+///   <item><description><see cref="SetSetPattern"/>: <c>Set(x)</c> followed by <c>Set(y)</c> &#8594; <c>Set(y)</c>.</description></item>
+///   <item><description><see cref="AddSetPattern"/>: <c>Add(y)</c> followed by <c>Set(x)</c> &#8594; <c>Set(x)</c>, dropping the dead addition.</description></item>
+///   <item><description><see cref="MulAndClearPattern"/>: <c>[->+&lt;]</c> &#8594; <see cref="OpCodeType.MulAndClear"/>.</description></item>
+///   <item><description><see cref="MulPattern"/>: <c>[->+&gt;++&lt;&lt;]</c> &#8594; a run of <see cref="OpCodeType.Mul"/> with a final <see cref="OpCodeType.MulAndClear"/>.</description></item>
+///   <item><description><see cref="MulAndMulPattern"/>: <c>[->[->+&lt;]&lt;]</c> &#8594; <see cref="OpCodeType.MulAndMul"/> followed by the inner loop and a <c>Set(0)</c>.</description></item>
+///   <item><description><see cref="PointerScanPattern"/>: <c>[&gt;]</c> &#8594; <see cref="OpCodeType.PointerScan"/>.</description></item>
 /// </list>
 /// <para>
 /// Recognising a loop pattern is dominated by inspecting the loop body, so the
@@ -99,7 +99,7 @@ public class OptimizingParser : SimpleParser
     /// <param name="tokens">The token stream produced by a lexer.</param>
     /// <returns>The optimised, flat top-level op-code list.</returns>
     /// <remarks>
-    /// <see cref="SimpleParser.Parse"/> builds a brand-new tree and every loop
+    /// <see cref="SimpleParser.Parse(IReadOnlyList{Token})"/> builds a brand-new tree and every loop
     /// body is its own <see cref="List{T}"/>, so the result can be mutated
     /// directly without copying it first. The traversal is repeated until it
     /// reaches a fixed point.
