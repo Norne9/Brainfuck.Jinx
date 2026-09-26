@@ -89,6 +89,41 @@ public class IntegrationTests
         Assert.Equal("/\\\n / \n \\/\n", output);
     }
 
+    [Fact]
+    public void OptimizingParser_PreservesNestedLoopSemantics()
+    {
+        // Regression: `[->[->+<]<]` is not a multiplication (the inner counter
+        // is consumed on the first outer iteration), so the optimiser must not
+        // assign it a closed form.
+        const string source = "++++>+++<[->[->+<]<]>>.<.";
+
+        var expected = Run(source);
+
+        Assert.Equal(expected, RunOptimized(source, new InterpreterExecutor()));
+        Assert.Equal(expected, RunOptimized(source, new JitExecutor()));
+    }
+
+    [Fact]
+    public void OptimizingParser_CollapsesEmptiedLoopToHalt()
+    {
+        // +[><] : the body >< nets to nothing, so the loop is the `[]` idiom and
+        // must become Halt. An empty Loop would hang the interpreter while the
+        // JIT skipped it.
+        const string source = "+[><]";
+
+        var opCodes = new OptimizingParser().Parse(new TextLexer().ParseTokens(source.AsSpan()));
+
+        Assert.Collection(
+            opCodes,
+            code => Assert.Equal(new OpCode(OpCodeType.Add, 1), code),
+            code => Assert.Equal(OpCodeType.Halt, code.Type));
+
+        // Both executors must terminate rather than spin.
+        using var io = new BufferedIo();
+        new InterpreterExecutor().Execute(new FixedMachine(io), opCodes);
+        new JitExecutor().Execute(io, opCodes);
+    }
+
     private static string Run(string source, IEnumerable<byte>? input = null)
     {
         var tokens = new TextLexer().ParseTokens(source.AsSpan());

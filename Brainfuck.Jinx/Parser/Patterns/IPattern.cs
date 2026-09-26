@@ -15,7 +15,7 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 /// <see cref="OpCodeType.Set"/> together with the <see cref="OpCodeType.Add"/>
 /// that follows or precedes it. The parser applies a match with a single
 /// <c>RemoveRange</c>/<c>InsertRange</c> pair. Returning an empty
-/// <paramref name="replacement"/> deletes the consumed run.
+/// <c>replacement</c> deletes the consumed run.
 /// </para>
 /// <para>
 /// Patterns are offered <b>every</b> op-code, not only loops. Some rules (for

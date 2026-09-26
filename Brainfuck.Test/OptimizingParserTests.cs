@@ -38,17 +38,28 @@ public class OptimizingParserTests
     }
 
     [Fact]
-    public void Parse_FlattensNestedLoop()
+    public void Parse_KeepsNestedMultiplicationLoopAsGenericLoop()
     {
+        // `[->[->+<]<]` is not a multiplication: its inner counter is cleared
+        // on the first iteration and never recharged, so it has no closed form
+        // and must stay a generic Loop. The inner `[->+<]` is still flattened.
         var tokens = new TextLexer().ParseTokens("+[->[->+<]<]".AsSpan());
         var opCodes = new OptimizingParser().Parse(tokens);
 
         Assert.Collection(
             opCodes,
             code => Assert.Equal(new OpCode(OpCodeType.Add, 1), code),
-            code => Assert.Equal(new OpCode(OpCodeType.MulAndMul, 1, null, 1, 1), code),
-            code => Assert.Equal(new OpCode(OpCodeType.MulAndClear, 1, null, -1, 1), code),
-            code => Assert.Equal(new OpCode(OpCodeType.Set, 0), code));
+            code =>
+            {
+                Assert.Equal(OpCodeType.Loop, code.Type);
+                Assert.Equal(
+                [
+                    new OpCode(OpCodeType.Add, -1),
+                    new OpCode(OpCodeType.Shift, 1),
+                    new OpCode(OpCodeType.MulAndClear, 1, null, 0, 1),
+                    new OpCode(OpCodeType.Shift, -1)
+                ], code.OpCodes);
+            });
     }
 
     [Fact]
