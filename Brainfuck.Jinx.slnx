@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="Brainfuck.Jinx/Brainfuck.Jinx.csproj" />
+  <Project Path="Brainfuck.Shell/Brainfuck.Shell.csproj" />
   <Project Path="Brainfuck.Test/Brainfuck.Test.csproj" />
 </Solution>
