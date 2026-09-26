@@ -10,7 +10,8 @@ public enum OpCodeType
     SetZero,
     Mul,
     MulAndClear,
-    MulAndMul
+    MulAndMul,
+    Halt
 }
 
 public readonly record struct OpCode(
@@ -32,6 +33,7 @@ public readonly record struct OpCode(
             OpCodeType.Mul => $"Mul(val={Value} buf={Buffer} off={Offset})",
             OpCodeType.MulAndClear => $"MulAndClear(val={Value} buf={Buffer} off={Offset})",
             OpCodeType.MulAndMul => $"MulAndMul(val={Value} buf={Buffer} off={Offset})",
+            OpCodeType.Halt => "Halt",
             _ => throw new ArgumentOutOfRangeException()
         };
 }

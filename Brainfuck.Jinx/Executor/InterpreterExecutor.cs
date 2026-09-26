@@ -43,6 +43,12 @@ public class InterpreterExecutor : IExecutor
                     machine.MulAndMul(opcode.Value, opcode.Buffer);
                     Shift(machine, opcode.Offset);
                     break;
+                case OpCodeType.Halt:
+                    if (!machine.IsZero())
+                    {
+                        return;
+                    }
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(opcodes), opcode.Type,
                         $"Unknown OpCode: {opcode.Type}");

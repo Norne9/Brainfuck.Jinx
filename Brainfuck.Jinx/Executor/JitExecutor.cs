@@ -83,6 +83,18 @@ public class JitExecutor: IExecutor
                 case OpCodeType.MulAndMul:
                     AddMulCall(il, opcode, MulAndMulMethod);
                     break;
+                case OpCodeType.Halt:
+                    var checkLabel = il.DefineLabel();
+                    var retLabel = il.DefineLabel();
+                    
+                    il.Emit(OpCodes.Br, checkLabel);
+                    il.MarkLabel(retLabel);
+                    il.Emit(OpCodes.Ret);
+                    
+                    il.MarkLabel(checkLabel);
+                    AddNoParamMethod(il, IsZeroMethod);
+                    il.Emit(OpCodes.Brfalse, retLabel);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(opcodes), opcode.Type,
                         $"Unknown OpCode: {opcode.Type}");
