@@ -65,6 +65,19 @@ public class MachineTests
     }
 
     [Fact]
+    public void Set_OverwritesCurrentCell()
+    {
+        using var io = new BufferedIo();
+        var machine = new FixedMachine(io);
+
+        machine.Add(10);
+        machine.Set(7);
+        machine.Write();
+
+        Assert.Equal([(byte)7], io.Output);
+    }
+
+    [Fact]
     public void Mul_AddsProductToBufferAndPreservesSource()
     {
         using var io = new BufferedIo();

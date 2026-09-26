@@ -24,6 +24,17 @@ public class ExecutorTests
     }
 
     [Fact]
+    public void Execute_DispatchesSet()
+    {
+        var machine = new RecordingMachine();
+        OpCode[] opCodes = [new(OpCodeType.Set, 7)];
+
+        _executor.Execute(machine, opCodes);
+
+        Assert.Equal(["Set(7)"], machine.Operations);
+    }
+
+    [Fact]
     public void Execute_DispatchesMulWithBuffer()
     {
         var machine = new RecordingMachine();
@@ -84,5 +95,16 @@ public class ExecutorTests
             "Write", "Add(-1)",
             "Write", "Add(-1)"
         ], machine.Operations);
+    }
+
+    [Fact]
+    public void Execute_DispatchesPointerScan()
+    {
+        var machine = new RecordingMachine();
+        OpCode[] opCodes = [new(OpCodeType.PointerScan, 3)];
+
+        _executor.Execute(machine, opCodes);
+
+        Assert.Equal(["PointerScan(3)"], machine.Operations);
     }
 }

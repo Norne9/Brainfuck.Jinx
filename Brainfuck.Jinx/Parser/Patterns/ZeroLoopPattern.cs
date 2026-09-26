@@ -4,20 +4,29 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 
 /// <summary>
 /// Folds a loop that merely clears its counter cell (<c>[-]</c>) into a single
-/// <see cref="OpCodeType.SetZero"/>.
+/// <see cref="OpCodeType.Set"/> of zero.
 /// </summary>
 /// <remarks>
 /// This is the degenerate case of an arithmetic loop: the body changes the
-/// counter by <c>-1</c> and leaves every other cell untouched.
+/// counter by <c>-1</c> and leaves every other cell untouched. The resulting
+/// <c>Set(0)</c> is usually fused with a following <see cref="OpCodeType.Add"/>
+/// by <see cref="SetAddPattern"/>.
 /// </remarks>
 public sealed class ZeroLoopPattern : IPattern
 {
     /// <inheritdoc />
-    public bool TryMatch(OpCode loop, in LoopAnalysis analysis, out OpCode[] replacement)
+    public bool TryMatch(
+        IReadOnlyList<OpCode> opCodes,
+        int index,
+        in LoopAnalysis analysis,
+        out int consumed,
+        out OpCode[] replacement)
     {
+        consumed = 0;
         replacement = [];
 
-        if (loop.OpCodes is null ||
+        var op = opCodes[index];
+        if (op.OpCodes is null ||
             !analysis.IsArithmetic ||
             analysis.CounterDelta != -1 ||
             analysis.Destinations.Count != 0)
@@ -25,7 +34,8 @@ public sealed class ZeroLoopPattern : IPattern
             return false;
         }
 
-        replacement = [new OpCode(OpCodeType.SetZero)];
+        consumed = 1;
+        replacement = [new OpCode(OpCodeType.Set, 0)];
         return true;
     }
 }

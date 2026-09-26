@@ -9,7 +9,7 @@ public class SimpleParser: IParser
     {
         var offset = 0;
         var result = Parse(tokens, ref offset);
-        return result.SkipWhile(code => code.Type is OpCodeType.Loop).ToList();
+        return result.SkipWhile(code => code.Type is OpCodeType.Loop or OpCodeType.Halt).ToList();
     }
     
     private static List<OpCode> Parse(IReadOnlyList<Token> tokens, ref int offset)
@@ -22,10 +22,7 @@ public class SimpleParser: IParser
             {
                 case Token.LeftBracket:
                     var codes = Parse(tokens, ref offset);
-                    if (codes.Count > 0)
-                    {
-                        result.Add(new OpCode(OpCodeType.Loop, 0, codes));
-                    }
+                    result.Add(codes.Count > 0 ? new OpCode(OpCodeType.Loop, 0, codes) : new OpCode(OpCodeType.Halt));
                     break;
                 case Token.RightBracket:
                     return result;

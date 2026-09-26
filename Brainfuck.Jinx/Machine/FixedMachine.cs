@@ -30,9 +30,9 @@ public class FixedMachine(IMachineIo io) : IMachine
         _memory[_position] = io.Read();
     }
 
-    public void SetZero()
+    public void Set(int value)
     {
-        _memory[_position] = 0;
+        _memory[_position] = (byte)value;
     }
 
     public void Mul(int value, int buffer)
@@ -52,6 +52,17 @@ public class FixedMachine(IMachineIo io) : IMachine
     {
         var destination = Wrap(_position + buffer);
         _memory[destination] = (byte)(_memory[destination] * value * _memory[_position]);
+    }
+
+    public void PointerScan(int direction)
+    {
+        // Brainfuck's `[>]`/`[<]` idiom: advance until the current cell is zero.
+        // The tape is a fixed ring, so a tape that is non-zero all the way
+        // around spins forever -- exactly as the equivalent generic loop would.
+        while (_memory[_position] != 0)
+        {
+            Shift(direction);
+        }
     }
 
     public bool IsZero() => _memory[_position] == 0;

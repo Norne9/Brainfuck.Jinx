@@ -6,9 +6,10 @@ public interface IMachine
     void Shift(int value);
     void Write();
     void Read();
-    void SetZero();
+    void Set(int value);
     void Mul(int value, int buffer);
     void MulAndClear(int value, int buffer);
     void MulAndMul(int value, int buffer);
+    void PointerScan(int direction);
     bool IsZero();
 }

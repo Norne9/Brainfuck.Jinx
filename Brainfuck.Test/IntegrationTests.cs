@@ -100,4 +100,43 @@ public class IntegrationTests
 
         return Encoding.Latin1.GetString(io.Output.ToArray());
     }
+
+    [Fact]
+    public void OptimizingParser_ProducesTheSameOutputAsSimpleParser()
+    {
+        const string source = """
+                              []++++++++++[>>+>+>++++++[<<+<+++>>>-]<<<<-]
+                              "A*$";?@![#>>+<<]>[>>]<<<<[>++<[-]]>.>.
+                              """;
+
+        var expected = Run(source);
+
+        Assert.Equal(expected, RunOptimized(source, new InterpreterExecutor()));
+        Assert.Equal(expected, RunOptimized(source, new JitExecutor()));
+    }
+
+    [Fact]
+    public void OptimizingParser_ExecutesWalkingLoops()
+    {
+        // +>>+>>+>>+ fills every other cell, then [->>] walks across them and
+        // zeroes each one as it passes.
+        const string source = "+>>+>>+>>+[->>]<<<.";
+
+        var expected = Run(source);
+
+        Assert.Equal(expected, RunOptimized(source, new InterpreterExecutor()));
+        Assert.Equal(expected, RunOptimized(source, new JitExecutor()));
+    }
+
+    private static string RunOptimized(string source, IExecutor executor)
+    {
+        var tokens = new TextLexer().ParseTokens(source.AsSpan());
+        var opCodes = new OptimizingParser().Parse(tokens);
+        using var io = new BufferedIo();
+        var machine = new FixedMachine(io);
+
+        executor.Execute(machine, opCodes);
+
+        return Encoding.Latin1.GetString(io.Output.ToArray());
+    }
 }

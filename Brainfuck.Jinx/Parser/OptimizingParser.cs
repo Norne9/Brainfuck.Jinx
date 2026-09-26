@@ -6,7 +6,7 @@ namespace Brainfuck.Jinx.Parser;
 
 /// <summary>
 /// Lowers a Brainfuck program to a flat op-code stream and then rewrites the
-/// well-known loop idioms into cheaper, purpose-built op-codes.
+/// well-known idioms into cheaper, purpose-built op-codes.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -20,20 +20,27 @@ namespace Brainfuck.Jinx.Parser;
 /// </list>
 /// <para>
 /// This parser adds the structural rewrites. Each supported idiom is described
-/// by an <see cref="IPattern"/> implementation, listed from most specific to
-/// most general:
+/// by an <see cref="IPattern"/> implementation. Patterns are offered
+/// <b>every</b> op-code, not only loops, and are tried in order; the first match
+/// wins:
 /// </para>
 /// <list type="bullet">
-///   <item><description><see cref="ZeroLoopPattern"/>: <c>[-]</c> &rarr; <see cref="OpCodeType.SetZero"/>.</description></item>
+///   <item><description><see cref="ZeroOpPattern"/>: <c>+0</c>/<c>&gt;0</c> (a cancelled run) &rarr; removed.</description></item>
+///   <item><description><see cref="ZeroLoopPattern"/>: <c>[-]</c> &rarr; <c>Set(0)</c>.</description></item>
+///   <item><description><see cref="SetAddPattern"/>: <c>Set(x)</c> followed by <c>Add(y)</c> &rarr; <c>Set(x + y)</c>, so <c>[-]++</c> becomes <c>Set(2)</c>.</description></item>
+///   <item><description><see cref="SetSetPattern"/>: <c>Set(x)</c> followed by <c>Set(y)</c> &rarr; <c>Set(y)</c>.</description></item>
+///   <item><description><see cref="AddSetPattern"/>: <c>Add(y)</c> followed by <c>Set(x)</c> &rarr; <c>Set(x)</c>, dropping the dead addition.</description></item>
 ///   <item><description><see cref="MulAndClearPattern"/>: <c>[->+&lt;]</c> &rarr; <see cref="OpCodeType.MulAndClear"/>.</description></item>
 ///   <item><description><see cref="MulPattern"/>: <c>[->+&gt;++&lt;&lt;]</c> &rarr; a run of <see cref="OpCodeType.Mul"/> with a final <see cref="OpCodeType.MulAndClear"/>.</description></item>
-///   <item><description><see cref="MulAndMulPattern"/>: <c>[->[->+&lt;]&lt;]</c> &rarr; <see cref="OpCodeType.MulAndMul"/> followed by the inner loop and a <see cref="OpCodeType.SetZero"/>.</description></item>
+///   <item><description><see cref="MulAndMulPattern"/>: <c>[->[->+&lt;]&lt;]</c> &rarr; <see cref="OpCodeType.MulAndMul"/> followed by the inner loop and a <c>Set(0)</c>.</description></item>
+///   <item><description><see cref="PointerScanPattern"/>: <c>[&gt;]</c> &rarr; <see cref="OpCodeType.PointerScan"/>.</description></item>
 /// </list>
 /// <para>
-/// Recognising a pattern is dominated by inspecting the loop body, so the parser
-/// summarises each body exactly once into a <see cref="LoopAnalysis"/> and hands
-/// that same value to every pattern. Patterns then decide from the shared
-/// summary instead of re-scanning the body.
+/// Recognising a loop pattern is dominated by inspecting the loop body, so the
+/// parser summarises each body exactly once into a <see cref="LoopAnalysis"/>
+/// and hands that same value to every pattern. Patterns then decide from the
+/// shared summary instead of re-scanning the body. Non-loop op-codes are handed
+/// a <see langword="default"/> analysis.
 /// </para>
 /// <para>
 /// Optimisation proceeds <b>bottom-up</b>: a loop's body is rewritten before
@@ -43,27 +50,34 @@ namespace Brainfuck.Jinx.Parser;
 /// <see cref="OpCodeType.MulAndClear"/>.
 /// </para>
 /// <para>
-/// A single bottom-up traversal reaches a fixed point. Patterns only ever
-/// replace an <see cref="OpCodeType.Loop"/> node with flat op-codes and never
-/// introduce a new loop, so rewriting one node can create a match only in an
-/// ancestor (already visited afterwards), never in a sibling or a descendant
-/// (already visited before). No repeated whole-tree pass is therefore necessary.
+/// A replacement is always flat (patterns never introduce a new loop), but a
+/// flat replacement can itself be recognised by a later rule -- for example a
+/// deleted run can leave a loop body empty. <see cref="Parse"/> therefore
+/// repeats the traversal until a pass makes no change.
 /// </para>
 /// </remarks>
 public class OptimizingParser : SimpleParser
 {
     /// <summary>
-    /// The pattern handlers, tried in order for every loop. The first match
-    /// wins. <see cref="ZeroLoopPattern"/>, <see cref="MulAndClearPattern"/> and
-    /// <see cref="MulPattern"/> are mutually exclusive (they split on the number
-    /// of destinations), while <see cref="MulAndMulPattern"/> handles the one
-    /// idiom that is not a flat arithmetic loop. The list is created once and
-    /// reused for every parse.
+    /// The pattern handlers, tried in order for every op-code. The first match
+    /// wins. The list is created once and reused for every parse.
     /// </summary>
     private static readonly IPattern[] Patterns =
     [
-        // [-] => SetZero
+        // +0 / >0 (cancelled run) => (removed)
+        new ZeroOpPattern(),
+
+        // [-] => Set(0)
         new ZeroLoopPattern(),
+
+        // Set(x) + Add(y) => Set(x + y)
+        new SetAddPattern(),
+
+        // Set(x), Set(y) => Set(y)
+        new SetSetPattern(),
+
+        // Add(y), Set(x) => Set(x)
+        new AddSetPattern(),
 
         // [->+<] => MulAndClear
         new MulAndClearPattern(),
@@ -71,8 +85,11 @@ public class OptimizingParser : SimpleParser
         // [->+>++<<] => Mul(...) + MulAndClear(...)
         new MulPattern(),
 
-        // [->[->+<]<] => MulAndMul(...) + MulAndClear(...) + SetZero
-        new MulAndMulPattern()
+        // [->[->+<]<] => MulAndMul(...) + MulAndClear(...) + Set(0)
+        new MulAndMulPattern(),
+
+        // [>] => PointerScan
+        new PointerScanPattern()
     ];
 
     /// <summary>
@@ -84,7 +101,8 @@ public class OptimizingParser : SimpleParser
     /// <remarks>
     /// <see cref="SimpleParser.Parse"/> builds a brand-new tree and every loop
     /// body is its own <see cref="List{T}"/>, so the result can be mutated
-    /// directly without copying it first.
+    /// directly without copying it first. The traversal is repeated until it
+    /// reaches a fixed point.
     /// </remarks>
     public override List<OpCode> Parse(IReadOnlyList<Token> tokens)
     {
@@ -95,52 +113,53 @@ public class OptimizingParser : SimpleParser
 
     /// <summary>
     /// Rewrites <paramref name="opCodes"/> and all of its nested loop bodies in
-    /// place, replacing every recognised loop idiom with its lower-level form.
+    /// place, replacing every recognised idiom with its lower-level form.
     /// </summary>
     /// <param name="opCodes">The program (or loop body) to optimise.</param>
     /// <returns>
-    /// <see langword="true"/> if at least one loop was replaced by a pattern;
-    /// otherwise <see langword="false"/>.
+    /// <see langword="true"/> if at least one op-code was rewritten; otherwise
+    /// <see langword="false"/>.
     /// </returns>
     private static bool Optimize(List<OpCode> opCodes)
     {
         var madeChanges = false;
 
-        // Visit siblings left-to-right. Replacing an element never creates a
-        // new Loop node, so a single forward pass is enough: any inserted
-        // op-codes are flat and cannot match a pattern themselves.
+        // Visit op-codes left-to-right. Replacing an element inserts flat
+        // op-codes only, so any inserted element that a later rule can match is
+        // picked up by the next pass (Parse loops until no change).
         for (var i = 0; i < opCodes.Count; i++)
         {
-            // Patterns only ever apply to loops, so skip everything else up
-            // front instead of making each pattern re-check the op-code.
-            if (opCodes[i] is not { Type: OpCodeType.Loop, OpCodes: { Count: > 0 } body })
+            // Bottom-up: descend into a loop body first. By the time the loop
+            // itself is offered to the patterns, any nested idiom it contains
+            // has already been rewritten to the flat form that patterns such as
+            // MulAndMulPattern expect. Non-loop op-codes get a default
+            // analysis.
+            var analysis = default(LoopAnalysis);
+            if (opCodes[i] is { Type: OpCodeType.Loop, OpCodes: { Count: > 0 } body })
             {
-                continue;
+                madeChanges |= Optimize(body);
+                analysis = LoopAnalysis.Analyze(body);
             }
 
-            // Bottom-up: descend into the body first. By the time this loop is
-            // offered to the patterns, any nested loop it contains has already
-            // been rewritten to the flat form that MulAndMulPattern expects.
-            madeChanges |= Optimize(body);
-
-            // Summarise the (now final) body once and share it across all
-            // patterns. Without this, the two multiplication patterns would
-            // each analyse the same body.
-            var analysis = LoopAnalysis.Analyze(body);
-
             // Try the patterns in order and stop at the first match. Once a
-            // pattern succeeds the slot no longer represents the construct the
-            // remaining patterns look for, so trying them would be pointless.
+            // pattern succeeds the run it matched no longer represents the
+            // construct the remaining patterns look for, so trying them would be
+            // pointless.
             foreach (var pattern in Patterns)
             {
-                if (!pattern.TryMatch(opCodes[i], in analysis, out var replacement))
+                if (!pattern.TryMatch(opCodes, i, in analysis, out var consumed, out var replacement))
                 {
                     continue;
                 }
 
-                // Every pattern replaces exactly the loop it matched.
-                opCodes.RemoveAt(i);
-                opCodes.InsertRange(i, replacement);
+                // A pattern replaces the run it matched -- one op-code for most
+                // rules, but the Set-folding rules consume two. An empty
+                // replacement deletes the run.
+                opCodes.RemoveRange(i, consumed);
+                if (replacement.Length > 0)
+                {
+                    opCodes.InsertRange(i, replacement);
+                }
 
                 madeChanges = true;
                 break;

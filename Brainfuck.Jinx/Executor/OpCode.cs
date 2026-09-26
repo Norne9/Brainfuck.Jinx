@@ -7,10 +7,12 @@ public enum OpCodeType
     Write,
     Read,
     Loop,
-    SetZero,
+    Set,
     Mul,
     MulAndClear,
-    MulAndMul
+    MulAndMul,
+    PointerScan,
+    Halt
 }
 
 public readonly record struct OpCode(
@@ -28,10 +30,12 @@ public readonly record struct OpCode(
             OpCodeType.Write => "Write",
             OpCodeType.Read => "Read",
             OpCodeType.Loop => "Loop[" + string.Join(", ", OpCodes ?? []) + "]",
-            OpCodeType.SetZero => "SetZero",
+            OpCodeType.Set => $"Set({Value})",
             OpCodeType.Mul => $"Mul(val={Value} buf={Buffer} off={Offset})",
             OpCodeType.MulAndClear => $"MulAndClear(val={Value} buf={Buffer} off={Offset})",
             OpCodeType.MulAndMul => $"MulAndMul(val={Value} buf={Buffer} off={Offset})",
+            OpCodeType.PointerScan => $"PointerScan({Value})",
+            OpCodeType.Halt => "Halt",
             _ => throw new ArgumentOutOfRangeException()
         };
 }

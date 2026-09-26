@@ -1,7 +1,6 @@
 ﻿using Brainfuck.Jinx.Executor;
 using Brainfuck.Jinx.IO;
 using Brainfuck.Jinx.Lexer;
-using Brainfuck.Jinx.Machine;
 using Brainfuck.Jinx.Parser;
 
 namespace Brainfuck.Jinx;
@@ -161,9 +160,8 @@ class Program
         var tokens = lexer.ParseTokens(TestProgram.AsSpan());
         var parser = new OptimizingParser();
         var codes = parser.Parse(tokens);
-        using var io = new SimpleIo();
-        var machine = new FixedMachine(io);
-        var executor = new InterpreterExecutor();
-        executor.Execute(machine, codes);
+        using var io = new BufferedIo();
+        var executor = new JitExecutor();
+        executor.Execute(io, codes);
     }
 }

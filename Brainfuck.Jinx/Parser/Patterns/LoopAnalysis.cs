@@ -24,7 +24,7 @@ public readonly record struct LoopDestination(int Offset, int Value);
 /// Such a loop has a closed-form effect: it adds <see cref="CounterDelta"/> to
 /// the counter cell and, for every entry in <see cref="Destinations"/>, adds a
 /// fixed multiple of the counter to another cell. That is exactly the shape the
-/// <c>SetZero</c>/<c>Mul</c>/<c>MulAndClear</c> op-codes execute, so the whole
+/// <c>Set</c>/<c>Mul</c>/<c>MulAndClear</c> op-codes execute, so the whole
 /// loop can be replaced without iterating it.
 /// </para>
 /// <para>
