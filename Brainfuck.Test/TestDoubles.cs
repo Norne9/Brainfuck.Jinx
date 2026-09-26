@@ -51,5 +51,8 @@ internal sealed class RecordingMachine(byte initialValue = 0) : IMachine
     public void MulAndMul(int value, int buffer) =>
         Operations.Add($"MulAndMul({value}, {buffer})");
 
+    public void PointerScan(int direction) =>
+        Operations.Add($"PointerScan({direction})");
+
     public bool IsZero() => _value == 0;
 }

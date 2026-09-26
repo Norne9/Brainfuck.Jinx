@@ -85,4 +85,15 @@ public class ExecutorTests
             "Write", "Add(-1)"
         ], machine.Operations);
     }
+
+    [Fact]
+    public void Execute_DispatchesPointerScan()
+    {
+        var machine = new RecordingMachine();
+        OpCode[] opCodes = [new(OpCodeType.PointerScan, 3)];
+
+        _executor.Execute(machine, opCodes);
+
+        Assert.Equal(["PointerScan(3)"], machine.Operations);
+    }
 }

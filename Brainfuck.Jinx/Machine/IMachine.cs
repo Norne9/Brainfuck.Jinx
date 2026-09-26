@@ -10,5 +10,6 @@ public interface IMachine
     void Mul(int value, int buffer);
     void MulAndClear(int value, int buffer);
     void MulAndMul(int value, int buffer);
+    void PointerScan(int direction);
     bool IsZero();
 }

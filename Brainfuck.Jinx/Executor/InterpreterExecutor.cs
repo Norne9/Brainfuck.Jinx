@@ -43,6 +43,9 @@ public class InterpreterExecutor : IExecutor
                     machine.MulAndMul(opcode.Value, opcode.Buffer);
                     Shift(machine, opcode.Offset);
                     break;
+                case OpCodeType.PointerScan:
+                    machine.PointerScan(opcode.Value);
+                    break;
                 case OpCodeType.Halt:
                     if (!machine.IsZero())
                     {

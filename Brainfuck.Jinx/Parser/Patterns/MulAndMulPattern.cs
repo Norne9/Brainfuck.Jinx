@@ -17,13 +17,13 @@ namespace Brainfuck.Jinx.Parser.Patterns;
 public sealed class MulAndMulPattern : IPattern
 {
     /// <inheritdoc />
-    public bool TryMatch(OpCode loop, in LoopAnalysis analysis, out OpCode[] replacement)
+    public bool TryMatch(OpCode op, in LoopAnalysis analysis, out OpCode[] replacement)
     {
         // The shared arithmetic analysis intentionally does not apply here; this
         // pattern inspects the raw body below.
         replacement = [];
 
-        if (loop.OpCodes is not { } body)
+        if (op.OpCodes is not { } body)
         {
             return false;
         }
@@ -33,24 +33,24 @@ public sealed class MulAndMulPattern : IPattern
         OpCode? flattened = null;
         var flattenedAt = 0;
 
-        foreach (var op in body)
+        foreach (var code in body)
         {
-            switch (op.Type)
+            switch (code.Type)
             {
                 case OpCodeType.Shift:
-                    pointer += op.Value;
+                    pointer += code.Value;
                     break;
 
                 // Only increments on the counter cell may remain un-flattened;
                 // any addition elsewhere means this is not the idiom.
                 case OpCodeType.Add when pointer == 0:
-                    counterDelta += op.Value;
+                    counterDelta += code.Value;
                     break;
 
                 // The single flattened inner multiplication, anchored on the
                 // counter cell (Offset == 0) so it reads the counter's value.
-                case OpCodeType.Mul or OpCodeType.MulAndClear when flattened is null && op.Offset == 0:
-                    flattened = op;
+                case OpCodeType.Mul or OpCodeType.MulAndClear when flattened is null && code.Offset == 0:
+                    flattened = code;
                     flattenedAt = pointer;
                     break;
 

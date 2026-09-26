@@ -85,7 +85,9 @@ public class ParserTests
     [Fact]
     public void Parse_RemovesEmptyLoops()
     {
-        var opCodes = _parser.Parse([Token.Increment, Token.LeftBracket, Token.RightBracket, Token.Write]);
+        // An empty loop at the start of the program is a no-op on the
+        // zero-initialised tape, so the parser drops it (and its Halt marker).
+        var opCodes = _parser.Parse([Token.LeftBracket, Token.RightBracket, Token.Increment, Token.Write]);
 
         Assert.Collection(
             opCodes,

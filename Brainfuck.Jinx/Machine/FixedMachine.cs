@@ -54,6 +54,17 @@ public class FixedMachine(IMachineIo io) : IMachine
         _memory[destination] = (byte)(_memory[destination] * value * _memory[_position]);
     }
 
+    public void PointerScan(int direction)
+    {
+        // Brainfuck's `[>]`/`[<]` idiom: advance until the current cell is zero.
+        // The tape is a fixed ring, so a tape that is non-zero all the way
+        // around spins forever -- exactly as the equivalent generic loop would.
+        while (_memory[_position] != 0)
+        {
+            Shift(direction);
+        }
+    }
+
     public bool IsZero() => _memory[_position] == 0;
 
     private static int Wrap(int position)

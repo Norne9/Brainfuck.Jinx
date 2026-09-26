@@ -17,6 +17,7 @@ public class JitExecutor: IExecutor
     private static readonly MethodInfo MulMethod = typeof(IMachine).GetMethod(nameof(IMachine.Mul))!;
     private static readonly MethodInfo MulAndClearMethod = typeof(IMachine).GetMethod(nameof(IMachine.MulAndClear))!;
     private static readonly MethodInfo MulAndMulMethod = typeof(IMachine).GetMethod(nameof(IMachine.MulAndMul))!;
+    private static readonly MethodInfo PointerScanMethod = typeof(IMachine).GetMethod(nameof(IMachine.PointerScan))!;
     private static readonly MethodInfo IsZeroMethod = typeof(IMachine).GetMethod(nameof(IMachine.IsZero))!;
 
     public void Execute(IMachine machine, IReadOnlyList<OpCode> opcodes)
@@ -82,6 +83,9 @@ public class JitExecutor: IExecutor
                     break;
                 case OpCodeType.MulAndMul:
                     AddMulCall(il, opcode, MulAndMulMethod);
+                    break;
+                case OpCodeType.PointerScan:
+                    AddOneParamMethod(il, opcode.Value, PointerScanMethod);
                     break;
                 case OpCodeType.Halt:
                     var checkLabel = il.DefineLabel();
