@@ -1,0 +1,71 @@
+name: Build bf
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-bf:
+    name: bf (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+            ext: .exe
+          - rid: win-arm64
+            os: windows-latest
+            ext: .exe
+          - rid: linux-x64
+            os: ubuntu-latest
+            ext: ''
+          - rid: linux-arm64
+            os: ubuntu-latest
+            ext: ''
+          - rid: osx-arm64
+            os: macos-latest
+            ext: ''
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          dotnet-quality: ga
+
+      # Publish a self-contained, single-file shell. PublishSingleFile is
+      # already enabled by Brainfuck.Shell.csproj; only the runtime and
+      # self-contained flags are needed here.
+      - name: Publish bf (${{ matrix.rid }})
+        run: >
+          dotnet publish Brainfuck.Shell
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained true
+          --output "${{ github.workspace }}/artifacts/${{ matrix.rid }}"
+          -p:DebugType=None
+
+      # The published binary carries the assembly name, so rename it to the
+      # documented `bf` command used throughout the README.
+      - name: Rename executable to bf
+        shell: bash
+        run: |
+          mv "artifacts/${{ matrix.rid }}/Brainfuck.Shell${{ matrix.ext }}" \
+             "artifacts/${{ matrix.rid }}/bf${{ matrix.ext }}"
+
+      - name: Upload bf artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: bf-${{ matrix.rid }}
+          path: artifacts/${{ matrix.rid }}/bf${{ matrix.ext }}
+          if-no-files-found: error
